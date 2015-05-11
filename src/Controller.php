@@ -82,7 +82,7 @@ class Controller
 	public function initializeTemplate($directory = null)
 	{
 		if (empty($directory)) {
-			$directory = $this->context->resolvePath($this->app['views_dir']);
+			$directory = $this->context->getViewsDir();
 		}
 
 		// Remember what directory was set. We may have to reinitialize the template later and don't want to lose the previous setting.

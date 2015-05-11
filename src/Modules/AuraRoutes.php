@@ -67,7 +67,7 @@ class AuraRoutes extends Module
 		if (!class_exists($class)) {
 			return $app->pageNotFound();
 		}
-		$page = new $class($this->createContext());
+		$page = new $class($this->getContext());
 		$this->callNamed($page, $action, $params);
 	}
 

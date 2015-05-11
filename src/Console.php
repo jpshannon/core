@@ -8,7 +8,7 @@ class Console extends WerxApp
 
 	public function __construct(array $settings = [], array $args = [])
 	{
-		parent::__construct($settings, $services);
+		parent::__construct($settings);
 		$this->args = $args;
 		$this->addModule(new Modules\ConsoleDispatcher);
 	}

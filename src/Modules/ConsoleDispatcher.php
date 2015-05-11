@@ -2,10 +2,10 @@
 
 namespace werx\Core\Modules;
 
-use werx\Core\Modules;
+use werx\Core\Module;
 use werx\Core\WerxApp;
 
-class ConsoleDispatcher extends Modules
+class ConsoleDispatcher extends Module
 {
 	public function handle(WerxApp $app)
 	{

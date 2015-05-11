@@ -28,6 +28,8 @@ abstract class WerxApp implements \ArrayAccess
 
 	protected $settings;
 
+	protected $context;
+
 	public function __get($name)
 	{
 		if($this->services->has($name)) {
@@ -83,9 +85,12 @@ abstract class WerxApp implements \ArrayAccess
 		return $this->name;
 	}
 
-	public function createContext()
+	public function getContext()
 	{
-		return new AppContext($this);
+		if ($this->context) {
+			return $this->context;
+		}
+		return $this->context = new AppContext($this);
 	}
 
 	protected function setEnvironment($environment = 'local')

@@ -18,6 +18,11 @@ class WebAppContext extends AppContext
 		$this->request = $app->request;
 	}
 
+	public function getViewsDir()
+	{
+		return $this->resolvePath($this->app['views_dir']);
+	}
+
 	/**
 	 * Returns the base path including the script name
 	 * @return string

@@ -12,7 +12,7 @@ class ConfigTests extends \PHPUnit_Framework_TestCase
 		$_SERVER['SCRIPT_FILENAME'] = 'phpunit.php';
 		$_SERVER['SCRIPT_NAME'] =  '/werx/phpunit.php';
 		$_SERVER['REQUEST_URI'] = "/werx/phpunit.php";
-		$this->config = (new WerxWebApp(['app_dir' => $this->getAppDir()]))->createContext();
+		$this->config = (new WerxWebApp(['app_dir' => $this->getAppDir()]))->getContext();
 	}
 
 	public function testCanGetEnvironment()

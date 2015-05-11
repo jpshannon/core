@@ -22,9 +22,12 @@ class WerxWebApp extends WerxApp
 		$this['base_url'] = rtrim($this['base_url'], '/');
 	}
 
-	public function createContext()
+	public function getContext()
 	{
-		return new WebAppContext($this);
+		if ($this->context) {
+			return $this->context;
+		}
+		return $this->context = new WebAppContext($this);
 	}
 
 	protected function initServices(ServiceCollection $services)
