@@ -53,4 +53,17 @@ class Input
 			return $this->request->query->all();
 		}
 	}
+
+	public function content($as_array = true)
+	{
+		if ($this->request->getContentType() === "json") {
+			return json_decode($this->request->getContent(), $as_array);
+		}
+
+		$data = $this->request->request->all();
+		if ($as_array === false) {
+			$data = (object) $data;
+		}
+		return $data;
+	}
 }

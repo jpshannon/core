@@ -2,18 +2,19 @@
 
 namespace werx\Core;
 
-use werx\Core\Config;
-
-class Console
+class Console extends WerxApp
 {
-	public $config = null;
+	protected $args;
 
-	public function __construct($opts = [])
+	public function __construct(array $settings = [], array $args = [])
 	{
-		// Where is our app's source code?
-		$app_dir = array_key_exists('app_dir', $opts) ? $opts['app_dir'] : null;
+		parent::__construct($settings, $services);
+		$this->args = $args;
+		$this->addModule(new Modules\ConsoleDispatcher);
+	}
 
-		// Set up configs.
-		$this->config = new Config($app_dir);
+	public function getArgs()
+	{
+		return $this->args;
 	}
 }

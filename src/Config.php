@@ -42,7 +42,7 @@ class Config
 
 	/**
 	 * Work out the path to a resource in your app.
-	 * @param $resource
+	 * @param string $resource
 	 * @return string
 	 */
 	public function resolvePath($resource)

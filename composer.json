@@ -11,22 +11,30 @@
 	],
 	"autoload": {
 		"psr-4": {
-			"werx\\Core\\Tests\\": "tests/",
-			"werx\\Core\\Tests\\App\\": "tests/resources/",
-			"werx\\Core\\Tests\\App\\Controllers\\": "tests/resources/controllers/",
-			"werx\\Core\\Tests\\App\\Models\\": "tests/resources/models/",
-			"werx\\Core\\": "src/"
+			"werx\\Core\\": "src/",
+			"werx\\Core\\Modules\\": "src/Modules"
 		}
 	},
+
+	"autoload-dev": {
+		"psr-4": {
+			"werx\\Core\\Tests\\": "tests/",
+			"werx\\Core\\Tests\\App\\Controllers\\": "tests/resources/controllers/",
+			"werx\\Core\\Tests\\App\\Models\\": "tests/resources/models",
+			"werx\\Core\\Examples\\":  "examples"
+		}
+	},
+
 	"require": {
 		"php": ">= 5.4",
 		"aura/router": "~2.0",
 		"league/plates": "~2.1",
 		"werx/config": "~1.0",
-		"illuminate/database": "~4.2",
+		"werx/url": "~1.0",
+		"illuminate/database": "~5.0",
 		"prelude/prelude-database": "0.0.3",
 		"symfony/http-foundation": "~2.6",
-		"werx/url": "~1.2"
+		"rize/uri-template": "~0.2.6"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "~4.4",

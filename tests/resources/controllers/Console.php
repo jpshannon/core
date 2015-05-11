@@ -6,7 +6,7 @@ use werx\Core\Console as ConsoleController;
 
 class Console extends ConsoleController
 {
-	public function __construct($opts)
+	public function __construct(array $opts = [])
 	{
 		parent::__construct($opts);
 	}

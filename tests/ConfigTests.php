@@ -2,50 +2,51 @@
 
 namespace werx\Core\Tests;
 
-use werx\Core\Config;
+use werx\Core\WerxWebApp;
 
 class ConfigTests extends \PHPUnit_Framework_TestCase
 {
+	protected function setUp()
+	{
+		$_SERVER['SERVER_NAME'] = 'localhost';
+		$_SERVER['SCRIPT_FILENAME'] = 'phpunit.php';
+		$_SERVER['SCRIPT_NAME'] =  '/werx/phpunit.php';
+		$_SERVER['REQUEST_URI'] = "/werx/phpunit.php";
+		$this->config = (new WerxWebApp(['app_dir' => $this->getAppDir()]))->createContext();
+	}
+
 	public function testCanGetEnvironment()
 	{
-		$config = new Config($this->getAppDir());
-		
-		$this->assertEquals('dev', $config->getEnvironment());
+		$this->assertEquals('dev', $this->config->getEnvironment());
 	}
 
 	public function testCanResolvePath()
 	{
-		$config = new Config($this->getAppDir());
-		
-		$this->assertEquals($this->getAppDir() . DIRECTORY_SEPARATOR . 'views', $config->resolvePath('views'));
+
+		$this->assertEquals($this->getAppDir() . DIRECTORY_SEPARATOR . 'views', $this->config->resolvePath('views'));
 	}
-	
+
 	public function testCanLoadDefaultConfig()
 	{
-		$config = new Config($this->getAppDir());
-		$config->load('default');
-		$this->assertEquals('bar', $config->get('foo'));
+		$this->config->load('default');
+		$this->assertEquals('bar', $this->config->get('foo'));
 	}
 
 	public function testCanLoadEnvironmentConfig()
 	{
-		$config = new Config($this->getAppDir());
-		$config->load('envopts');
-		$this->assertEquals('test', $config->get('env'));
+		$this->config->load('envopts');
+		$this->assertEquals('test', $this->config->get('env'));
 	}
 
 	public function testGetBaseUrlShouldReturnConfigItem()
 	{
-		$_SERVER['SERVER_NAME'] = 'localhost';
-		$config = new Config($this->getAppDir());
-		$this->assertEquals('http://test.server.name/werx/', $config->getBaseUrl());
+		$this->assertEquals('http://test.server.name/werx', $this->config->getBaseUri());
 	}
 
 	public function testGetScriptUrlShouldReturnConfigItem()
 	{
-		$_SERVER['SERVER_NAME'] = 'localhost';
-		$config = new Config($this->getAppDir());
-		$this->assertContains('http://test.server.name/werx/phpunit', $config->getScriptUrl());
+		$this->config->getApp()['expose_script_name'] = true;
+		$this->assertEquals('http://test.server.name/werx/phpunit.php', $this->config->getBaseUri());
 	}
 
 	protected function getAppDir()

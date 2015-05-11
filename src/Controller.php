@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
+
 
 class Controller
 {
@@ -20,9 +20,14 @@ class Controller
 	public $template;
 
 	/**
-	 * @var \werx\Core\Config $config
+	 * @var \werx\Core\WebAppContext $config
 	 */
 	public $config;
+
+	/**
+	 * @var \werx\Core\WebAppContext $context
+	 */
+	public $context;
 
 	/**
 	 * @var \Symfony\Component\HttpFoundation\Request $request
@@ -40,7 +45,7 @@ class Controller
 	public $ds = DIRECTORY_SEPARATOR;
 
 	/**
-	 * @var \werx\Core\Dispatcher $app
+	 * @var \werx\Core\WerxApp $app
 	 */
 	public $app;
 
@@ -50,46 +55,23 @@ class Controller
 	public $input;
 
 	/**
-	 * Should we expose script name by default when building urls?
-	 * @var bool
+	 * Data for use by the view
+	 * @var array
 	 */
-	public $expose_script_name = true;
+	protected $view_data = [];
 
-	/**
-	 * Directory we are serving views from.
-	 */
-	public $views_directory;
-
-
-	public function __construct($opts = [])
+	public function __construct($context)
 	{
 		// Set the instance of our application
-		$this->app = array_key_exists('app_instance', $GLOBALS) ? $GLOBALS['app_instance'] : null;
-
-		// Where is our app's source code?
-		$app_dir = array_key_exists('app_dir', $opts) ? $opts['app_dir'] : null;
-
-		// Set up configs.
-		$this->initializeConfig($app_dir);
+		$this->app = $context->getApp();
+		$this->context = $context;
+		$this->config = $context; // for backwards compatibility
 
 		// Set up the template engine.
 		$this->initializeTemplate();
 
 		// Set up our HTTP Request object.
 		$this->initializeRequest();
-
-		// Initialize the Session.
-		$this->initializeSession();
-	}
-
-	/**
-	 * Set up the configuration manager.
-	 *
-	 * @param string $app_dir Filesystem path to the config directory
-	 */
-	public function initializeConfig($app_dir = null)
-	{
-		$this->config = new Config($app_dir);
 	}
 
 	/**
@@ -100,17 +82,13 @@ class Controller
 	public function initializeTemplate($directory = null)
 	{
 		if (empty($directory)) {
-			$directory = $this->config->resolvePath('views');
+			$directory = $this->context->resolvePath($this->app['views_dir']);
 		}
 
 		// Remember what directory was set. We may have to reinitialize the template later and don't want to lose the previous setting.
 		$this->views_directory = $directory;
 
 		$this->template = new Template($directory, $this->config);
-
-		// Add our url builder to the template.
-		$extension = new \werx\Url\Extensions\Plates(null, null, $this->expose_script_name);
-		$this->template->loadExtension($extension);
 	}
 
 	/**
@@ -120,80 +98,23 @@ class Controller
 	 */
 	public function initializeRequest($request = null)
 	{
-		if (empty($request)) {
-			$this->request = Request::createFromGlobals();
-		} else {
-			$this->request = $request;
-		}
+		$this->request = $this->app->request;
 
 		// Shortcuts to the request object for cleaner syntax.
 		$this->input = new Input($this->request);
 	}
 
 	/**
-	 * Initialize the session.
-	 *
-	 * This is something you might want to override in your controller so you can
-	 * redirect to a page with a message about being logged out after detecting the session has expired.
-	 *
-	 * @var int $session_expiration Session Expiration in seconds
-	 */
-	protected function initializeSession($session_expiration = null)
-	{
-		/**
-		 * Setup the session with cookie expiration of one week. This will
-		 * allow the session to persist even if the browser window is closed.
-		 * The session expiration will still be respected (default 1 hour).
-		 */
-		$this->session = new Session(
-			new \Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage(
-				['cookie_lifetime' => 604800]
-			)
-		);
-
-		$this->config->load('config');
-
-		// We need a unique session name for this app. Let's use last 10 characters the file path's sha1 hash.
-		try {
-			$this->session->setName('TSAPP' . substr(sha1(__FILE__), -10));
-			$this->session->start();
-
-			// Default session expiration 1 hour.
-			// Can be overridden in method param or by setting session_expiration in config.php
-			$session_expiration = !empty($session_expiration)
-				? $session_expiration
-				: $this->config->get('session_expiration', 3600);
-
-			// Is this session too old?
-			if (time() - $this->session->getMetadataBag()->getLastUsed() > $session_expiration) {
-				$this->session->invalidate();
-			}
-		} catch (\LogicException $e) {
-			// Session already active, can't change it now!
-		}
-	}
-
-	/**
-	 * Should we expose the script name when building Urls?
-	 *
-	 * @param bool $expose default true
-	 */
-	protected function exposeScriptName($expose = true)
-	{
-		$this->expose_script_name = $expose;
-	}
-
-	/**
 	 * Internal or External Redirect to the specified url
 	 *
-	 * @param $url
-	 * @param array $params
+	 * @param string $url
+	 * @param string|int|array $params
 	 * @param bool $is_query_string
 	 */
 	public function redirect($url, $params = [], $is_query_string = false)
 	{
 		if (!preg_match('/^http/', $url)) {
-			$url_builder = new \werx\Url\Builder(null, null, $this->expose_script_name);
+			$url_builder = new \werx\Url\Builder(null, null, $this->app['expose_script_name']);
 
 			if ($is_query_string && is_array($params)) {
 				$url = $url_builder->query($url, $params);
@@ -206,6 +127,16 @@ class Controller
 			$url = $url_builder->expand($url, $params);
 		}
 
+		$this->redirectTo($url);
+	}
+
+	public function redirectToRoute($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	{
+		$this->redirectTo($this->routeUrl($route, $data, $apply_current_params, $qs));
+	}
+
+	public function redirectTo($url)
+	{
 		/**
 		 * You MUST call session_write_close() before performing a redirect to ensure the session is written,
 		 * otherwise it might not happen quickly enough to save your session changes.
@@ -220,10 +151,12 @@ class Controller
 	 * Send a json response with given content.
 	 *
 	 * @param array $content
+	 * @param int $status HTTP Status Code to send
+	 * @param array $headers Additional headers to send
 	 */
-	public function json($content = [])
+	public function json($content = [], $status=200, $headers = [])
 	{
-		$response = new JsonResponse();
+		$response = new JsonResponse(null, $status, $headers);
 		$response->setData($content);
 		$response->send();
 	}
@@ -243,42 +176,57 @@ class Controller
 	}
 
 	/**
-	 * Which controller was requested?
-	 *
-	 * @param null $default
-	 * @return null|string
+	 * Returns the view for the current action
+	 * @param string|array $data The view to show if a string is passed, data to be passed to the view
+	 * @param array $view_data View data to be applied to the current view
 	 */
-	public function getRequestedController($default = null)
+	public function view($view = null, array $data = null)
 	{
-		if (property_exists($this, 'app') && is_object($this->app) && property_exists($this->app, 'controller')) {
-			return $this->app->controller;
-		} elseif (!empty($default)) {
-			return $default;
+		if(is_array($view)) {
+			$data = $view;
+			$view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $this->app['action']);
 		} else {
-			$reflect = new \ReflectionClass($this);
-			return strtolower($reflect->getShortName());
+			if (strpos($view, DIRECTORY_SEPARATOR)===false) {
+				$view = $view = sprintf('%s%s%s', $this->app->controller, DIRECTORY_SEPARATOR, $view);
+			}
 		}
+		$this->view_data = $data;
+		$this->template->output($view, $data);
 	}
 
 	/**
-	 * Which action was requested?
-	 *
-	 * @param string $default
-	 * @return string
+	 * Returns the current views custom data
 	 */
-	public function getRequestedAction($default = 'index')
+	public function viewData()
 	{
-		if (property_exists($this, 'app') && is_object($this->app) && property_exists($this->app, 'action')) {
-			return $this->app->action;
-		} else {
-			return $default;
+		return $this->view_data;
+	}
+
+	public function routeUrl($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	{
+		if(is_array($route)) {
+			$data = $route;
+			$route = $this->app['route_name'];
 		}
+
+		$url = $this->getRouteUrl($route, $data, $apply_current_params);
+		return empty($qs) ? $url : $url . '?' . http_build_query($qs);
+	}
+
+	public function routeUri($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	{
+		return $this->context->getUri($this->routeUrl($route, $data, $apply_current_params, $qs));
+	}
+
+	protected function getRouteUrl($route_name, $route_data = [], $apply_current_params = true)
+	{
+		$router = $this->app->router;
+		$route = $router->generate($route_name ?: $this->app['route_name'], $route_data);
+		return $this->context->getUrl($route);
 	}
 
 	public function __call($method = null, $args = null)
 	{
-		// Send a 404 for any methods that don't exist.
-		$response = new Response('Not Found', 404, ['Content-Type' => 'text/plain']);
-		$response->send();
+		$this->app->pageNotFound();
 	}
 }

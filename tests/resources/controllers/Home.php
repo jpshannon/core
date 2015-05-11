@@ -9,13 +9,14 @@ class Home extends Controller
 	public function __construct($opts)
 	{
 		parent::__construct($opts);
+		$this->initializeSession(); // sessions come from modules now and are not part of controller initialization
 	}
 
 	public function index()
 	{
 		print 'HOME\INDEX';
 	}
-	
+
 	public function renderTemplate()
 	{
 		echo $this->template->render('foo', ['foo' => 'bar']);
@@ -30,13 +31,13 @@ class Home extends Controller
 	{
 		// Save our prefill content. This could come from anywhere like a form get/post.
 		$data = ['foo' => 'from session'];
-		
+
 		// Store our prefill content in session.
 		$this->session->set('prefill', $data);
-		
+
 		// Grab our prefill content back from session and mass assign.
 		$this->template->setPrefill($this->session->get('prefill'));
-		
+
 		$this->template->output('prefill');
 	}
 
@@ -45,10 +46,10 @@ class Home extends Controller
 		// Save our prefill content. This could come from anywhere like a form get/post.
 		// In this case, we are actually going to clear the data from session to test it being empty.
 		$this->session->remove('prefill');
-		
+
 		// Grab our prefill content back from session and mass assign.
 		$this->template->setPrefill($this->session->get('prefill'));
-		
+
 		$this->template->output('prefill');
 	}
 
