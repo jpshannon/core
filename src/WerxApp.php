@@ -69,8 +69,11 @@ abstract class WerxApp implements \ArrayAccess
 		$start->handle($this);
 	}
 
-	public function getServices()
+	public function getServices($service = null)
 	{
+		if (!empty($service)) {
+			return $this->services->get($service);
+		}
 		return $this->services;
 	}
 

@@ -16,7 +16,7 @@ class NativeSession extends Module
 		 * The session expiration will still be respected (default 1 hour).
 		 */
 		$services = $app->getServices();
-		$services->setSingleton('session', function() {
+		$services->setSingleton('session', function() use ($app) {
 			$session = new Session(
 				new \Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage(
 					['cookie_lifetime' => 604800]

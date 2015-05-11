@@ -1,20 +1,14 @@
-<?php
+<?php 
+namespace \werx\Core;
 
-namespace werx\Core;
-
-class Console extends WerxApp
+class Console
 {
-	protected $args;
-
-	public function __construct(array $settings = [], array $args = [])
+	public function __construct($context, $cli_only = true)
 	{
-		parent::__construct($settings);
-		$this->args = $args;
-		$this->addModule(new Modules\ConsoleDispatcher);
+		$this->app = $context->getApp();
+		$this->context = $context;
+		if ($cli_only && $this->context->cli === false) {
+			die("This is only available from CLI.\n");
+		}
 	}
-
-	public function getArgs()
-	{
-		return $this->args;
-	}
-}
+} 

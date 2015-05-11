@@ -8,6 +8,5 @@ class Dispatcher extends WerxWebApp
 	{
 		parent::__construct($settings);
 		$this->addModule(new Modules\AuraRoutes);
-		$this->addModule(new Modules\NativeSession);
 	}
 }

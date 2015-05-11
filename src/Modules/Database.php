@@ -1,6 +1,6 @@
 <?php
 
-namespace \werx\Core\Modules;
+namespace werx\Core\Modules;
 
 use \werx\Core\Model;
 use \werx\Core\WerxApp;

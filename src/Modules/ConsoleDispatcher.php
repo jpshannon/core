@@ -23,15 +23,10 @@ class ConsoleDispatcher extends Module
 			die("You must pass in a method to call.\n");
 		}
 
-		$class_name = implode("\\", [$namespace, 'Controllers', $controller]);
+		$class_name = implode("\\", [$app['namespace'], 'Controllers', $controller]);
 
 		if (!class_exists($class_name, true)) {
 			die("Controller {$class_name} does not exist.\n");
-		}
-
-		$settings = ['namespace'=> $namespace];
-		if (!is_null($app_dir)) {
-			$settings['app_dir'] = $app_dir;
 		}
 
 		$class = new $class_name($app);
