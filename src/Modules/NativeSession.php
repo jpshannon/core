@@ -38,13 +38,17 @@ class NativeSession extends Module
 	{
 		try {
 			$session->start();
-			if (time() == $session->getMetadataBag()->getLastUsed() > $expires) {
+			if (time() - $session->getMetadataBag()->getLastUsed() > $expires) {
 				$session->invalidate();
 				// @todo: signal app the session was invalidated.
 			}
 		}
 		catch (\LogicException $e) {
 			// Session already active, can't change it now!
+		}
+		catch (\Exception $e) {
+			// Something else bad happend;
+			// @todo: show/log this?
 		}
 
 	}
