@@ -14,8 +14,6 @@ class AuraRoutes extends Module
 		$services->setSingleton('router', function ($sc) use($app) {
 			$factory = new \Aura\Router\RouterFactory;
 			$router = $factory->newInstance();
-			$router->add('default', '{/controller,action,id}')
-					->setValues(['controller' => $app['controller'], 'action' => $app['action']]);
 			return $router;
 		});
 
@@ -26,7 +24,11 @@ class AuraRoutes extends Module
 			// Let the app specify it's own routes.
 			include_once($routes_file);
 		}
-
+		$routes = $router->getRoutes();
+		if (empty($routes) || !array_key_exists('default', $routes)) {
+			$router->add('default', '{/controller,action,id}')
+				->setValues(['controller' => $app['controller'], 'action' => $app['action']]);
+		}
 	}
 
 	public function handle(WerxApp $app)

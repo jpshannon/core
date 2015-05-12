@@ -134,7 +134,7 @@ class Controller
 		$this->redirectTo($url);
 	}
 
-	public function redirectToRoute($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	public function redirectToRoute($route = null, array $data = [], $apply_current_params = true, array $qs = [])
 	{
 		$this->redirectTo($this->routeUrl($route, $data, $apply_current_params, $qs));
 	}
@@ -184,14 +184,14 @@ class Controller
 	 * @param string|array $data The view to show if a string is passed, data to be passed to the view
 	 * @param array $view_data View data to be applied to the current view
 	 */
-	public function view($view = null, array $data = null)
+	public function view($view = null, array $data = [])
 	{
 		if(is_array($view)) {
 			$data = $view;
 			$view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $this->app['action']);
 		} else {
 			if (strpos($view, DIRECTORY_SEPARATOR)===false) {
-				$view = $view = sprintf('%s%s%s', $this->app->controller, DIRECTORY_SEPARATOR, $view);
+				$view = $view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $view ?: $this->app['action']);
 			}
 		}
 		$this->view_data = $data;
@@ -226,9 +226,9 @@ class Controller
 		return $this->context->getUrl($uri->expend($template, $params), $qs);
 	}
 
-	public function routeUrl($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	public function routeUrl($route = null, array $data = [], $apply_current_params = true, array $qs = [])
 	{
-		if(is_array($route)) {
+		if (is_array($route)) {
 			$data = $route;
 			$route = $this->app['route_name'];
 		}
@@ -237,14 +237,21 @@ class Controller
 		return empty($qs) ? $url : $url . '?' . http_build_query($qs);
 	}
 
-	public function routeUri($route = null, array $data = null, $apply_current_params = true, array $qs = null)
+	public function routeUri($route = null, array $data = [], $apply_current_params = true, array $qs = [])
 	{
 		return $this->context->getUri($this->routeUrl($route, $data, $apply_current_params, $qs));
 	}
 
-	protected function getRouteUrl($route_name, $route_data = [], $apply_current_params = true)
+	protected function getRouteUrl($route_name, array $route_data = [], $apply_current_params = true)
 	{
 		$router = $this->app->router;
+		if ($apply_current_params) {
+			$route_data = array_merge(
+				$this->app['route_params'], 
+				['controller' => $this->app['controller'], 'action' => $this->app['action']],
+				$route_data
+			);
+		}
 		$route = $router->generate($route_name ?: $this->app['route_name'], $route_data);
 		return $this->context->getUrl($route);
 	}
