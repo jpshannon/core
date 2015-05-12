@@ -45,6 +45,7 @@ abstract class WerxApp implements \ArrayAccess
 		$this->setEnvironment($this->settings['environment']);
 		$this->createConfig();
 		foreach ($this->config->load('config') as $key => $value) {
+			// allow settings passed in to the object prevail
 			if (!array_key_exists($key, $settings)) {
 				$this->settings[$key] = $value;
 			}

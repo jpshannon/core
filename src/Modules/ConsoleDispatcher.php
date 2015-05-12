@@ -29,7 +29,7 @@ class ConsoleDispatcher extends Module
 			die("Controller {$class_name} does not exist.\n");
 		}
 
-		$class = new $class_name($app);
+		$class = new $class_name($app->getContext());
 
 		if (!method_exists($class, $job_name)) {
 			die("Method {$job_name} does not exist for controller {$class_name}.\n");
