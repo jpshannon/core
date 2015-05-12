@@ -2,7 +2,7 @@
 
 namespace werx\Core\Modules;
 
-use \werx\Core\Model;
+use \werx\Core\Module;
 use \werx\Core\WerxApp;
 use \werx\Core\Database;
 
