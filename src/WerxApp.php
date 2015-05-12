@@ -60,6 +60,7 @@ abstract class WerxApp implements \ArrayAccess
 		if (count($this->modules) > 0) {
 			$module->setNext($this->modules[0]);
 		}
+		$module->config($this);
 		array_unshift($this->modules, $module);
 	}
 

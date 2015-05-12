@@ -11,17 +11,17 @@ class AuraRoutes extends Module
 	{
 		$services = $app->getServices();
 
-		$services->setSingleton('router', function ($sc) {
-			$settings = $this->settings;
+		$services->setSingleton('router', function ($sc) use($app) {
 			$factory = new \Aura\Router\RouterFactory;
 			$router = $factory->newInstance();
-			$router->add('default', '/{controller,action,id}')
-					->setValues(['controller' => $settings['controller'], 'action' => $settings['action']]);
+			$router->add('default', '{/controller,action,id}')
+					->setValues(['controller' => $app['controller'], 'action' => $app['action']]);
 			return $router;
 		});
 
 		$routes_file = $app->getAppResourcePath('config/routes.php');
 
+		$router = $services->get('router');
 		if (file_exists($routes_file)) {
 			// Let the app specify it's own routes.
 			include_once($routes_file);
@@ -48,7 +48,7 @@ class AuraRoutes extends Module
 			return $app->pageNotFound();
 		}
 
-		list($controller, $action, $params) = $this->getAction($route);
+		list($controller, $action, $params) = $this->getAction($route, $app['controller'], $app['action']);
 
 		$app['route_name'] = empty($route->name) ? 0 : $route->name;
 		$app['controller'] = strtolower($controller);
@@ -67,7 +67,7 @@ class AuraRoutes extends Module
 		if (!class_exists($class)) {
 			return $app->pageNotFound();
 		}
-		$page = new $class($this->getContext());
+		$page = new $class($app->getContext());
 		$this->callNamed($page, $action, $params);
 	}
 
@@ -75,7 +75,7 @@ class AuraRoutes extends Module
 	 * @param /Aura/Router/Route $route
 	 * @return array
 	 */
-	public function getAction(\Aura\Router\Route $route)
+	public function getAction(\Aura\Router\Route $route, $controller = 'home', $action = 'index')
 	{
 		// does the route indicate a controller?
 		if (isset($route->params['controller'])) {
@@ -100,18 +100,12 @@ class AuraRoutes extends Module
 			if (!empty($namespace)) {
 				$controller = $namespace . $controller;
 			}
-		} else {
-			// use a default controller
-			$controller = $app['controller'];
 		}
 
 		// does the route indicate an action?
 		if (isset($route->params['action'])) {
 			// take the action method directly from the route
 			$action = $route->params['action'];
-		} else {
-			// use a default action
-			$action = 'index';
 		}
 
 		$method_params = array_filter(
