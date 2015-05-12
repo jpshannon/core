@@ -9,11 +9,11 @@ class ConsoleDispatcher extends Module
 {
 	public function handle(WerxApp $app)
 	{
-		$argv = $app->getArgs();
+		$args = $app->getArgs();
 
-		$controller = ucfirst($argv[1]);
-		$job_name = $argv[2];
-		$args = array_slice($argv, 3);
+		$controller = ucfirst($args[1]);
+		$job_name = $args[2];
+		$args = array_slice($args, 3);
 
 		if (empty($controller)) {
 			die("You must pass in a controller to use.\n");
