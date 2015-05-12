@@ -56,8 +56,11 @@ class WebAppContext extends AppContext
 	 * @param string $path
 	 * @return string
 	 */
-	public function getUrl($path)
+	public function getUrl($path, array $qs = [])
 	{
+		if (!empty($qs)) {
+			$path .= (strpos($path, "?") >= 0 ? "&" : "?") . http_build_query($qs);
+		}
 		return WerxApp::combineVirtualPath($this->getBaseUrl(), ltrim($path, '/'));
 	}
 
@@ -71,6 +74,12 @@ class WebAppContext extends AppContext
 		if($include_base) {
 			$path = $this->getUrl($this->getBaseUrl(), $path);
 		}
-		return $this->getBaseUrl() . $path;
+		return $this->getBaseUri() . $path;
+	}
+
+	public function getAsset($path, $as_uri = false)
+	{
+		$path = WerxApp::combineVirtualPath($this->request->getBaseUrl(), $path);
+		return $as_uri ? $this->app['base_url'] . $path : $path;
 	}
 }

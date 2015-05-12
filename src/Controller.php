@@ -88,7 +88,11 @@ class Controller
 		// Remember what directory was set. We may have to reinitialize the template later and don't want to lose the previous setting.
 		$this->views_directory = $directory;
 
-		$this->template = new Template($directory, $this->config);
+		$this->template = new Template($directory);
+
+		// Add url builder to the template.
+		$extension = new \werx\Url\Extensions\Plates(null, null, $this->app['expose_script_name']);
+		$this->template->loadExtension($extension);
 	}
 
 	/**
@@ -200,6 +204,26 @@ class Controller
 	public function viewData()
 	{
 		return $this->view_data;
+	}
+
+	public function asset($resource)
+	{
+		return $this->context->getAsset($resource);
+	}
+
+	public function url($template, $params = [], array $qs = [])
+	{
+		if (is_string($params) || is_int($params)) {
+			$params = ['id' => $params];
+			if (!preg_match('/\{id\}/', $template)) {
+				$template = rtrim($template, '/') . '/{id}';
+			}
+		}
+		if (!is_array($params)) {
+			throw new \Exception('Invalid params');
+		}
+		$uri = \Rize\UriTemplate();
+		return $this->context->getUrl($uri->expend($template, $params), $qs);
 	}
 
 	public function routeUrl($route = null, array $data = null, $apply_current_params = true, array $qs = null)
