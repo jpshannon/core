@@ -2,7 +2,7 @@
 
 namespace werx\Core;
 
-class Console extends WerxApp
+class ConsoleApp extends WerxApp
 {
 	protected $args;
 

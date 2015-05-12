@@ -1,15 +1,16 @@
 <?php 
-namespace \werx\Core;
+namespace werx\Core;
 
 class Console
 {
 	/**
-	 * @var \werx\Core\WebAppContext $config
+	 * @var \werx\Core\Config $config
+	 * @deprecated 2.0 same functionality is provided by \werx\Core\AppContext
 	 */
 	public $config;
 
 	/**
-	 * @var \werx\Core\WebAppContext $context
+	 * @var \werx\Core\AppContext $context
 	 */
 	public $context;
 
@@ -22,7 +23,7 @@ class Console
 	{
 		$this->app = $context->getApp();
 		$this->context = $context;
-		$this->config = $context; // help transition;
+		$this->config = new Config($context); // help transition;
 		if ($cli_only && $this->context->cli === false) {
 			die("This is only available from CLI.\n");
 		}

@@ -20,7 +20,8 @@ class Controller
 	public $template;
 
 	/**
-	 * @var \werx\Core\WebAppContext $config
+	 * @var \werx\Core\Config $config
+	 * @deprecated 2.0 updated to \werx\Core\WebAppContext
 	 */
 	public $config;
 
@@ -38,11 +39,6 @@ class Controller
 	 * @var \Symfony\Component\HttpFoundation\Session\Session $session
 	 */
 	public $session;
-
-	/**
-	 * @var string $ds System default directory separator
-	 */
-	public $ds = DIRECTORY_SEPARATOR;
 
 	/**
 	 * @var \werx\Core\WerxApp $app
@@ -65,7 +61,7 @@ class Controller
 		// Set the instance of our application
 		$this->app = $context->getApp();
 		$this->context = $context;
-		$this->config = $context; // for backwards compatibility
+		$this->config = new Config($context);
 
 		// Set up the template engine.
 		$this->initializeTemplate();

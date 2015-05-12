@@ -24,7 +24,8 @@ class WebAppContext extends AppContext
 	}
 
 	/**
-	 * Returns the base path including the script name
+	 * Returns the base path excluding the the script name
+	 *
 	 * @return string
 	 */
 	public function getBasePath()
@@ -33,22 +34,29 @@ class WebAppContext extends AppContext
 	}
 
 	/**
-	 * Gets the base url of the app
+	 * Gets the base url of the app including the script name
+	 *
 	 * @return string
 	 */
 	public function getBaseUrl()
 	{
-		$include_script_name = $this->app['expose_script_name'];
-		return $include_script_name ? $this->request->getBaseUrl() : $this->request->getBasePath();
+		return $this->request->getBaseUrl();
+	}
+
+	public function getRootUrl()
+	{
+		$include_script_name = $this->app['expose_script_name']; 
+		return $include_script_name ? $this->getBaseUrl() : $this->getBasePath();
 	}
 
 	/**
 	 * Gets the base uri of the app
+	 *
 	 * @return string
 	 */
 	public function getBaseUri()
 	{
-		return $this->app['base_url'] . $this->getBaseUrl();
+		return $this->app['base_url'] . $this->getRootUrl();
 	}
 
 	/**
@@ -61,7 +69,7 @@ class WebAppContext extends AppContext
 		if (!empty($qs)) {
 			$path .= (strpos($path, "?") >= 0 ? "&" : "?") . http_build_query($qs);
 		}
-		return WerxApp::combineVirtualPath($this->getBaseUrl(), ltrim($path, '/'));
+		return WerxApp::combineVirtualPath($this->getRootUrl(), ltrim($path, '/'));
 	}
 
 	/**
@@ -72,14 +80,14 @@ class WebAppContext extends AppContext
 	public function getUri($path, $include_base = true)
 	{
 		if($include_base) {
-			$path = $this->getUrl($this->getBaseUrl(), $path);
+			$path = $this->getUrl($this->getRootUrl(), $path);
 		}
 		return $this->getBaseUri() . $path;
 	}
 
 	public function getAsset($path, $as_uri = false)
 	{
-		$path = WerxApp::combineVirtualPath($this->request->getBaseUrl(), $path);
+		$path = WerxApp::combineVirtualPath($this->getBasePath(), $path);
 		return $as_uri ? $this->app['base_url'] . $path : $path;
 	}
 }

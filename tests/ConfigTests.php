@@ -12,7 +12,7 @@ class ConfigTests extends \PHPUnit_Framework_TestCase
 		$_SERVER['SCRIPT_FILENAME'] = 'phpunit.php';
 		$_SERVER['SCRIPT_NAME'] =  '/werx/phpunit.php';
 		$_SERVER['REQUEST_URI'] = "/werx/phpunit.php";
-		$this->config = (new WerxWebApp(['app_dir' => $this->getAppDir()]))->getContext();
+		$this->config = new \werx\Core\Config((new WerxWebApp(['app_dir' => $this->getAppDir()]))->getContext());
 	}
 
 	public function testCanGetEnvironment()
@@ -40,13 +40,12 @@ class ConfigTests extends \PHPUnit_Framework_TestCase
 
 	public function testGetBaseUrlShouldReturnConfigItem()
 	{
-		$this->assertEquals('http://test.server.name/werx', $this->config->getBaseUri());
+		$this->assertEquals('http://test.server.name/werx', $this->config->getBaseUrl());
 	}
 
 	public function testGetScriptUrlShouldReturnConfigItem()
 	{
-		$this->config->getApp()['expose_script_name'] = true;
-		$this->assertEquals('http://test.server.name/werx/phpunit.php', $this->config->getBaseUri());
+		$this->assertEquals('http://test.server.name/werx/phpunit.php', $this->config->getBaseUrl(true));
 	}
 
 	protected function getAppDir()

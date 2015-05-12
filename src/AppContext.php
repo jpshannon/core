@@ -12,7 +12,7 @@ class AppContext
 	/**
 	 * @var \werx\Config\Container
 	 */
-	protected $config;
+	public $config;
 
 	public $base_path;
 
