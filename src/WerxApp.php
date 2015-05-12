@@ -43,12 +43,15 @@ abstract class WerxApp implements \ArrayAccess
 		$this->services = new ServiceCollection;
 		$this->settings = array_merge(static::defaultSettings(), $settings);
 		$this->setEnvironment($this->settings['environment']);
-		$this->initServices($this->services);
+		$this->createConfig();
 		foreach ($this->config->load('config') as $key => $value) {
-			$this->settings[$key] = $value;
+			if (!array_key_exists($key, $settings)) {
+				$this->settings[$key] = $value;
+			}
 		}
 		$this->setName($this->settings['name']);
 		static::addInstance($this);
+		$this->initServices($this->services);
 	}
 
 	public function addModule(Module $module)
@@ -97,6 +100,15 @@ abstract class WerxApp implements \ArrayAccess
 		return $this->context = new AppContext($this);
 	}
 
+	protected function createConfig()
+	{
+		$this->services->setSingleton('config', function ($sc) {
+			$settings = $this->settings;
+			$provider = new \werx\Config\Providers\ArrayProvider(self::combinePath($settings['app_dir'], $settings['config_dir']));
+			return new \werx\Config\Container($provider, $settings['environment']);
+		});
+	}
+
 	protected function setEnvironment($environment = 'local')
 	{
 		$settings = $this->settings;
@@ -106,11 +118,6 @@ abstract class WerxApp implements \ArrayAccess
 
 	protected function initServices(ServiceCollection $services)
 	{
-		$services->setSingleton('config', function ($sc) {
-			$settings = $this->settings;
-			$provider = new \werx\Config\Providers\ArrayProvider(self::combinePath($settings['app_dir'], $settings['config_dir']));
-			return new \werx\Config\Container($provider, $settings['environment']);
-		});
 		return $services;
 	}
 
