@@ -1,7 +1,12 @@
 <?php 
 namespace werx\Core;
 
-class Console
+/**
+ * Base console controller
+ *
+ * This class is to ConsoleApp as Controller is to WerxWebApp.
+ */
+abstract class Console
 {
 	/**
 	 * @var \werx\Core\Config $config

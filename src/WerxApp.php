@@ -5,29 +5,57 @@ namespace werx\Core;
 /**
  * WerxApp.
  *
- * @property-read /werx/Config/Container $config
+ * @property /werx/Config/Container $config
  */
 abstract class WerxApp implements \ArrayAccess
 {
 	/**
-	 * @var []
+	 * Active apps
+	 *
+	 * @var WerxApp[]
 	 */
 	protected static $app = [];
 
+	/**
+	 * Modules to be run with the app
+	 *
+	 * Modules are executed first in last out. Typically you will register your main module first.
+	 * 
+	 * @var Module[]
+	 */
 	protected $modules = [];
 
 	/**
+	 * The name of the app
+	 *
 	 * @var string
 	 */
 	protected $name = null;
 
 	/**
+	 * Collection of services configured for the app.
+	 *
+	 * Services should be registred from the initServices method or from Modules.
+	 * 
 	 * @var ServiceCollection
 	 */
 	protected $services;
 
+	/**
+	 * Default settings for the app.
+	 *
+	 * Settings are a combination of WerxApp::$defaultSettings, $settings passed in from the constructor
+	 * and settings found in config.php
+	 * 
+	 * @var []
+	 */
 	protected $settings;
 
+	/**
+	 * Context for the app being executed
+	 * 
+	 * @var AppContext|WebAppContext
+	 */
 	protected $context;
 
 	public function __get($name)
@@ -55,6 +83,14 @@ abstract class WerxApp implements \ArrayAccess
 		$this->initServices($this->services);
 	}
 
+	/**
+	 * Adds a module to be run with the app.
+	 *
+	 * Modules are loaded FIFO.
+	 * 
+	 * @param Module $module
+	 * @return WerxApp
+	 */
 	public function addModule(Module $module)
 	{
 		if (in_array($module, $this->modules)) {
@@ -66,14 +102,24 @@ abstract class WerxApp implements \ArrayAccess
 		}
 		$module->config($this);
 		array_unshift($this->modules, $module);
+		return $this;
 	}
 
+	/**
+	 * Runs the application
+	 */
 	public function run()
 	{
 		$start = $this->modules[0];
 		$start->handle($this);
 	}
 
+	/**
+	 * Get the service collection registered with the application
+	 * 
+	 * @param  string|null $service Get the specific services instead of the collection
+	 * @return ServiceCollection|mixed If no services is specified, the full collection of services.
+	 */
 	public function getServices($service = null)
 	{
 		if (!empty($service)) {
@@ -82,17 +128,34 @@ abstract class WerxApp implements \ArrayAccess
 		return $this->services;
 	}
 
+	/**
+	 * Sets the name of the application.
+	 *
+	 * Defaults to the value of WerxApp::$settings["name"]
+	 * 
+	 * @param string $name
+	 */
 	public function setName($name)
 	{
 		$this->name = $name;
 		return $this;
 	}
 
+	/**
+	 * Gets the name of the app
+	 * 
+	 * @return string
+	 */
 	public function getName()
 	{
 		return $this->name;
 	}
 
+	/**
+	 * Gets the context of the application
+	 * 
+	 * @return AppContext|WebAppContext
+	 */
 	public function getContext()
 	{
 		if ($this->context) {
@@ -101,6 +164,11 @@ abstract class WerxApp implements \ArrayAccess
 		return $this->context = new AppContext($this);
 	}
 
+	/**
+	 * Creates the config container for the application and registers it as a service
+	 * 
+	 * @return \werx\Config\Container
+	 */
 	protected function createConfig()
 	{
 		$this->services->setSingleton('config', function ($sc) {
@@ -108,8 +176,14 @@ abstract class WerxApp implements \ArrayAccess
 			$provider = new \werx\Config\Providers\ArrayProvider(self::combinePath($settings['app_dir'], $settings['config_dir']));
 			return new \werx\Config\Container($provider, $settings['environment']);
 		});
+		return $this->services->get('config');
 	}
 
+	/**
+	 * Sets the application environment
+	 * 
+	 * @param string $environment
+	 */
 	protected function setEnvironment($environment = 'local')
 	{
 		$settings = $this->settings;
@@ -117,12 +191,20 @@ abstract class WerxApp implements \ArrayAccess
 		$this->settings['environment'] = (file_exists($env) ? trim(file_get_contents($env)) : $environment);
 	}
 
+	/**
+	 * Initialize services for the application
+	 * 
+	 * @param  ServiceCollection $services
+	 * @return ServiceCollection
+	 */
 	protected function initServices(ServiceCollection $services)
 	{
 		return $services;
 	}
 
 	/**
+	 * Get the source directory of the application
+	 * 
 	 * @return string
 	 */
 	public function getSrcDir()
@@ -131,6 +213,8 @@ abstract class WerxApp implements \ArrayAccess
 	}
 
 	/**
+	 * Get the path to resource
+	 * 
 	 * @param string $file
 	 * @return string
 	 */
@@ -141,6 +225,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccces: Check if offset exists
+	 * 
 	 * @param mixed $offset
 	 * @return bool
 	 */
@@ -151,6 +236,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Get the value at the requested offset
+	 * 
 	 * @param mixed $offset
 	 * @return mixed
 	 */
@@ -161,6 +247,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Check the value of the requested offset
+	 * 
 	 * @param mixed $offset
 	 * @param mixed $value
 	 */
@@ -171,6 +258,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Unset the value of the requested offset
+	 * 
 	 * @param mixed $offset
 	 */
 	public function offsetUnset($offset)
@@ -180,6 +268,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Get a WerxApp instance by name
+	 * 
 	 * @param string $name
 	 * @return null|WerxApp
 	 */
@@ -188,6 +277,11 @@ abstract class WerxApp implements \ArrayAccess
 		return isset(static::$app[$name]) ? static::$app[$name] : null;
 	}
 
+	/**
+	 * Add a WerxApp instance
+	 * 
+	 * @param WerxApp $app
+	 */
 	public static function addInstance(WerxApp $app)
 	{
 		if(empty(static::$app)) {
@@ -196,13 +290,19 @@ abstract class WerxApp implements \ArrayAccess
 		static::$app[$app->getName()] = $app;
 	}
 
+	/**
+	 * Remove a WerxApp instance
+	 * 
+	 * @param WerxApp $app
+	 */
 	public static function removeInstance($app_name)
 	{
 		unset(static::$app[$app_name]);
 	}
 
 	/**
-	 * Defaults configuring a werx app
+	 * Defaults settings of a WerxApp
+	 * 
 	 * @return array
 	 */
 	public static function defaultSettings()
@@ -227,6 +327,8 @@ abstract class WerxApp implements \ArrayAccess
 	}
 
 	/**
+	 * Combines 1 or more paths together
+	 * 
 	 * @param string $base The base path
 	 * @param string $p,... The path to add
 	 * @return string The combined path
@@ -253,6 +355,8 @@ abstract class WerxApp implements \ArrayAccess
 	}
 
 	/**
+	 * Combines 1 or more paths together using the a connector suitable for the web
+	 * 
 	 * @param string $base The base path
 	 * @param string $p,... The path to add
 	 * @return string The combined path

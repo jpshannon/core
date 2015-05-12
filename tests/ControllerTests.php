@@ -91,7 +91,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 
 	public function testCanExtendConsole()
 	{
-		$controller = new Controllers\Console(['app_dir'=>$this->getAppDir()]);
+		$controller = new Controllers\Console($this->app->getContext());
 		$controller->sayHello('Dave');
 		$this->expectOutputString('Hello, Dave');
 	}

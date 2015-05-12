@@ -2,6 +2,9 @@
 
 namespace werx\Core;
 
+/**
+ * Console job runner
+ */
 class ConsoleApp extends WerxApp
 {
 	protected $args;
@@ -14,6 +17,11 @@ class ConsoleApp extends WerxApp
 		$this->addModule(new Modules\ConsoleDispatcher);
 	}
 
+	/**
+	 * The args to be used to run the application
+	 * 
+	 * @return []
+	 */
 	public function getArgs()
 	{
 		return $this->args;

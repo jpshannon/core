@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @property-read Request $request
- * @property-read WebAppContext $context
  */
 class WerxWebApp extends WerxApp
 {
@@ -22,6 +21,9 @@ class WerxWebApp extends WerxApp
 		$this['base_url'] = rtrim($this['base_url'], '/');
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getContext()
 	{
 		if ($this->context) {
@@ -30,6 +32,9 @@ class WerxWebApp extends WerxApp
 		return $this->context = new WebAppContext($this);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	protected function initServices(ServiceCollection $services)
 	{
 		parent::initServices($services);

@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 
+/**
+ * Base web controller
+ */
 class Controller
 {
 	/**
@@ -36,11 +39,6 @@ class Controller
 	public $request;
 
 	/**
-	 * @var \Symfony\Component\HttpFoundation\Session\Session $session
-	 */
-	public $session;
-
-	/**
 	 * @var \werx\Core\WerxApp $app
 	 */
 	public $app;
@@ -58,6 +56,8 @@ class Controller
 
 	public function __construct($context)
 	{
+		$context->setController($this);
+
 		// Set the instance of our application
 		$this->app = $context->getApp();
 		$this->context = $context;
