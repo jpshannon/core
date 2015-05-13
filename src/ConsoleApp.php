@@ -3,7 +3,7 @@
 namespace werx\Core;
 
 /**
- * Console job runner
+ * Console job runner.
  */
 class ConsoleApp extends WerxApp
 {

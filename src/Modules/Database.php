@@ -26,8 +26,9 @@ class Database extends Module
 	public function handle(WerxApp $app)
 	{
 		$this->setup($app);
-		$this->handleNext($app);
+		$response = $this->handleNext($app);
 		$this->tearDown($app);
+		return $response;
 	}
 
 	protected function setup(WerxApp $app)

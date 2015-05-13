@@ -48,14 +48,11 @@ class WerxWebApp extends WerxApp
 
 	public function run()
 	{
-		$reponse = parent::run();
-
-		if (!$response) {
-			$this->pageNotFound()->send();
-		}
-
-		if ($response instanceof Symfony\Component\HttpFoundation\Response) {
+		$response = parent::run();
+		if ($response instanceof \Symfony\Component\HttpFoundation\Response) {
 			$response->send();
+		} else {
+			$this->pageNotFound()->send();
 		}
 	}
 

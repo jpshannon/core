@@ -10,6 +10,15 @@ abstract class Module
 	{
 	}
 
+	/**
+	 * Handle an portion of the app request
+	 *
+	 * Implementors can optionaly return the value from handleNext.
+	 * Unless there is good reason not to.
+	 * 
+	 * @param  WerxApp $app [description]
+	 * @return [type]       [description]
+	 */
 	abstract public function handle(WerxApp $app);
 
 	public function setNext(Module $module)
@@ -26,8 +35,9 @@ abstract class Module
 	protected function handleNext(WerxApp $app)
 	{
 		if ($this->next) {
-			$this->next->handle($app);
+			return $this->next->handle($app);
 		}
+		return false;
 	}
 }
 

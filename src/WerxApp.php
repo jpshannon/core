@@ -111,7 +111,7 @@ abstract class WerxApp implements \ArrayAccess
 	public function run()
 	{
 		$start = $this->modules[0];
-		$start->handle($this);
+		return $start->handle($this);
 	}
 
 	/**

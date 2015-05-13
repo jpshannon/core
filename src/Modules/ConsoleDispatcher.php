@@ -35,7 +35,7 @@ class ConsoleDispatcher extends Module
 			die("Method {$job_name} does not exist for controller {$class_name}.\n");
 		}
 
-		call_user_func_array([$class, $job_name], $args);
+		return call_user_func_array([$class, $job_name], $args);
 	}
 }
 

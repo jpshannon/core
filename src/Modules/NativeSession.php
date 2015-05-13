@@ -30,9 +30,9 @@ class NativeSession extends Module
 	public function handle(WerxApp $app)
 	{
 		$this->start($app->session, $app->config->get('session_expiration', 3600));
-		$value = $this->handleNext($app);
+		$response = $this->handleNext($app);
 		$this->save($app->session);
-		return $value;
+		return $response;
 	}
 
 	public function start($session, $expires)
