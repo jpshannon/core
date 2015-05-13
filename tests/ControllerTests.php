@@ -28,7 +28,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanOutputJson()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->json(['foo' => 'bar']);
+		$controller->json(['foo' => 'bar'])->send();
 
 		$this->expectOutputString('{"foo":"bar"}');
 	}
@@ -36,7 +36,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanOutputJsonp()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->jsonp(['foo' => 'bar']);
+		$controller->jsonp(['foo' => 'bar'])->send();
 
 		$this->expectOutputString('/**/callback({"foo":"bar"});');
 	}
@@ -52,7 +52,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanOutputTemplate()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->outputTemplate();
+		$controller->outputTemplate()->send();
 
 		$this->expectOutputString('<p>bar</p>');
 	}
@@ -60,7 +60,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanRedirectExternal()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('http://www.example.com');
+		$controller->redirect('http://www.example.com')->send();
 
 		$this->expectOutputRegex('/Redirecting to http:\/\/www.example.com/');
 	}
@@ -68,7 +68,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanRedirectLocal()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people', 1);
+		$controller->redirect('home/people', 1)->send();
 
 		$this->expectOutputRegex('/home\/people\/1/');
 	}
@@ -76,7 +76,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanRedirectLocalArray()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people/{foo},{bar}', ['foo' => 'Foo', 'bar' => 'Bar']);
+		$controller->redirect('home/people/{foo},{bar}', ['foo' => 'Foo', 'bar' => 'Bar'])->send();
 
 		$this->expectOutputRegex('/home\/people\/Foo,Bar/');
 	}
@@ -84,7 +84,7 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanRedirectLocalQueryString()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people', ['lastname' => 'Foo', 'firstname' => 'Bar'], true);
+		$controller->redirect('home/people', ['lastname' => 'Foo', 'firstname' => 'Bar'], true)->send();
 
 		$this->expectOutputRegex('/home\/people\?lastname=Foo&amp;firstname=Bar/');
 	}
@@ -99,14 +99,14 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 	public function testCanPrefillFromSession()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->prefillFromSession();
+		$controller->prefillFromSession()->send();
 		$this->expectOutputString('from session', "Prefill in session should render the specified value");
 	}
 
 	public function testCanPrefillFromSessionDefaultValue()
 	{
 		$controller = new Controllers\Home($this->app->getContext());
-		$controller->prefillFromSessionDefaultValue();
+		$controller->prefillFromSessionDefaultValue()->send();
 		$this->expectOutputString('default', "No prefill in session should render default value");
 	}
 

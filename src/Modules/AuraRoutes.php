@@ -47,7 +47,7 @@ class AuraRoutes extends Module
 		$route = $app->router->match($path, $_SERVER);
 
 		if (!$route) {
-			return $app->pageNotFound();
+			return false;
 		}
 
 		list($controller, $action, $params) = $this->getAction($route, $app['controller'], $app['action']);
@@ -67,10 +67,11 @@ class AuraRoutes extends Module
 		}
 
 		if (!class_exists($class)) {
-			return $app->pageNotFound();
+			return false;
 		}
+
 		$page = new $class($app->getContext());
-		$this->callNamed($page, $action, $params);
+		return $this->callNamed($page, $action, $params);
 	}
 
 	/**
@@ -122,7 +123,7 @@ class AuraRoutes extends Module
 	protected function callNamed($page, $method, $params)
 	{
 		if (!method_exists($page, $method)) {
-			return $this->pageNotFound();
+			return false;
 		}
 
 		// don't use reflection unless we really need it!
@@ -135,7 +136,7 @@ class AuraRoutes extends Module
 
 		$method = new \ReflectionMethod($page, $method);
 		if (!$method->isPublic()) {
-			return $app->pageNotFound();
+			return false;
 		}
 
 		// sequential arguments when invoking

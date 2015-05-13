@@ -24,7 +24,7 @@ class Home extends Controller
 
 	public function outputTemplate()
 	{
-		$this->template->output('foo', ['foo' => 'bar']);
+		return $this->template->output('foo', ['foo' => 'bar']);
 	}
 
 	public function prefillFromSession()
@@ -37,8 +37,7 @@ class Home extends Controller
 
 		// Grab our prefill content back from session and mass assign.
 		$this->template->setPrefill($this->session->get('prefill'));
-
-		$this->template->output('prefill');
+		return $this->template->output('prefill');
 	}
 
 	public function prefillFromSessionDefaultValue()
@@ -50,7 +49,7 @@ class Home extends Controller
 		// Grab our prefill content back from session and mass assign.
 		$this->template->setPrefill($this->session->get('prefill'));
 
-		$this->template->output('prefill');
+		return $this->template->output('prefill');
 	}
 
 	/**

@@ -127,12 +127,12 @@ class Controller
 			$url = $url_builder->expand($url, $params);
 		}
 
-		$this->redirectTo($url);
+		return $this->redirectTo($url);
 	}
 
 	public function redirectToRoute($route = null, array $data = [], $apply_current_params = true, array $qs = [])
 	{
-		$this->redirectTo($this->routeUrl($route, $data, $apply_current_params, $qs));
+		return $this->redirectTo($this->routeUrl($route, $data, $apply_current_params, $qs));
 	}
 
 	public function redirectTo($url)
@@ -143,8 +143,7 @@ class Controller
 		 */
 		session_write_close();
 
-		$response = new RedirectResponse($url);
-		$response->send();
+		return new RedirectResponse($url);
 	}
 
 	/**
@@ -158,7 +157,7 @@ class Controller
 	{
 		$response = new JsonResponse(null, $status, $headers);
 		$response->setData($content);
-		$response->send();
+		return $response;
 	}
 
 	/**
@@ -172,7 +171,7 @@ class Controller
 		$response = new JsonResponse();
 		$response->setData($content);
 		$response->setCallback($jsonCallback);
-		$response->send();
+		return $response;
 	}
 
 	/**
@@ -191,7 +190,7 @@ class Controller
 			}
 		}
 		$this->view_data = $data;
-		$this->template->output($view, $data);
+		return $this->template->output($view, $data);
 	}
 
 	/**
@@ -254,6 +253,6 @@ class Controller
 
 	public function __call($method = null, $args = null)
 	{
-		$this->app->pageNotFound();
+		return false;
 	}
 }

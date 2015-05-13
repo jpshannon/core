@@ -8,6 +8,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 
 /**
+ * Base Web App runner
+ * 
  * @property-read Request $request
  */
 class WerxWebApp extends WerxApp
@@ -44,12 +46,24 @@ class WerxWebApp extends WerxApp
 		return $services;
 	}
 
+	public function run()
+	{
+		$reponse = parent::run();
+
+		if (!$response) {
+			$this->pageNotFound()->send();
+		}
+
+		if ($response instanceof Symfony\Component\HttpFoundation\Response) {
+			$response->send();
+		}
+	}
+
 	/**
 	 * @param string $message
 	 */
-	public function pageNotFound($message = 'Not Found')
+	public function pageNotFound($message = 'Not Found', $content_type = "text/plain")
 	{
-		$response = new Response($message, 404, ['Content-Type' => 'text/plain']);
-		$response->send();
+		return new Response($message, 404, ['Content-Type' => $content_type]);
 	}
 }

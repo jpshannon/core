@@ -65,8 +65,7 @@ class Template extends \League\Plates\Template
 	 */
 	public function output($view, array $data = null)
 	{
-		$response = new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
-		$response->send();
+		return new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
 	}
 
 	/**
