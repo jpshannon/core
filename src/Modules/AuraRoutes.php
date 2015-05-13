@@ -3,9 +3,12 @@ namespace werx\Core\Modules;
 
 use werx\Core\Module;
 use werx\Core\WerxApp;
+use Symfony\Component\HttpFoundation\Request;
+use Aura\Router\Router;
 
 class AuraRoutes extends Module
 {
+	protected $args = [];
 
 	public function config(WerxApp $app)
 	{
@@ -16,14 +19,27 @@ class AuraRoutes extends Module
 			$router = $factory->newInstance();
 			return $router;
 		});
+		$this->intializeRoutes($app);
 
+		$route = $this->match($services->get('router'), $services->get('request')->getPathInfo(), $_SERVER);
+		$this->args = $this->getAction($route, $app);
+	}
+
+	public function handle(WerxApp $app)
+	{
+		return $this->dispatch($app, $this->args);
+	}
+
+	public function intializeRoutes(WerxApp $app)
+	{
 		$routes_file = $app->getAppResourcePath('config/routes.php');
 
-		$router = $services->get('router');
+		$router = $app->getServices('router');
 		if (file_exists($routes_file)) {
 			// Let the app specify it's own routes.
 			include_once($routes_file);
 		}
+		
 		$routes = $router->getRoutes();
 		if (empty($routes) || !array_key_exists('default', $routes)) {
 			$router->add('default', '{/controller,action,id}')
@@ -31,85 +47,49 @@ class AuraRoutes extends Module
 		}
 	}
 
-	public function handle(WerxApp $app)
+	public function match(Router $router, $path, $server)
 	{
-		// What resource was requested?
-		$request = $app->request;
-
-		$path = $request->getPathInfo();
-
 		// Remove trailing slash from the path. This gives us a little more forgiveness in routing
 		if ($path != '/') {
 			$path = rtrim($path, '/');
 		}
 
 		// Find a matching route
-		$route = $app->router->match($path, $_SERVER);
+		$route = $router->match($path, $server);
 
 		if (!$route) {
 			return false;
 		}
 
-		list($controller, $action, $params) = $this->getAction($route, $app['controller'], $app['action']);
-
-		$app['route_name'] = empty($route->name) ? 0 : $route->name;
-		$app['controller'] = strtolower($controller);
-		$app['action']  = strtolower($action);
-		$app['route_params'] = $params;
-
-		if (substr($controller, 0, 1) == '\\') {
-			// Fully qualified namespace
-			$class = $controller;
-			$app['controller'] = strtolower(last(explode('\\', $controller)));
-		} else {
-			// instantiate the controller class from the default namespace
-			$class = join('\\', [$app['namespace'], 'Controllers', $controller]);
-		}
-
-		if (!class_exists($class)) {
-			return false;
-		}
-
-		$page = new $class($app->getContext());
-		return $this->callNamed($page, $action, $params);
+		return $route;
 	}
 
 	/**
 	 * @param /Aura/Router/Route $route
+	 * @param WerxApp $app
 	 * @return array
 	 */
-	public function getAction(\Aura\Router\Route $route, $controller = 'home', $action = 'index')
+	public function getAction(\Aura\Router\Route $route, WerxApp $app)
 	{
+		$app['route_name'] = empty($route->name) ? 0 : $route->name;
+
 		// does the route indicate a controller?
+		$controller =  $app['controller'];
 		if (isset($route->params['controller'])) {
-			$namespace = "";
-
-			if (isset($route->params['namespace'])) {
-				$namespace = rtrim($route->params['namespace'], '\\') . '\\';
-			}
-
-			// explode out our route parts in case there are any namespaces
-			$controller_parts = explode('\\', $route->params['controller']);
-
-			// only convert on the last part since that is the controller
-			// ucfirst after camel_case because laravel's camel_case doesn't
-			// uppercase the first letter
-			$controller_parts[count($controller_parts) - 1] = ucfirst(camel_case($controller_parts[count($controller_parts) - 1]));
-
-			// put back together the route parts
-			$controller = implode('\\', $controller_parts);
-
-			// if we found a namespace above, then prepend it to the controller
-			if (!empty($namespace)) {
-				$controller = $namespace . $controller;
-			}
+			$controller = $route->params['controller'];
 		}
+		
+		$routeNs = (isset($route->params['namespace']) ? $route->params['namespace'] : null);
+		$controller = $this->buildFqn($controller, $app['namespace'], $routeNs);
+		
+		$app['controller'] = strtolower(substr(strrchr($controller, '\\'), 1));
 
 		// does the route indicate an action?
+		$action = $app['action'];
 		if (isset($route->params['action'])) {
-			// take the action method directly from the route
 			$action = $route->params['action'];
 		}
+		$app['action'] = strtolower($action);
 
 		$method_params = array_filter(
 			array_diff_key($route->params, array_flip(['controller','action','namespace'])),
@@ -117,7 +97,21 @@ class AuraRoutes extends Module
 				return $v !== null;
 			}
 		);
+		$app['route_params'] = $method_params;
+
 		return [$controller, $action, $method_params];
+	}
+
+	public function dispatch(WerxApp $app, array $args)
+	{
+		list($controller, $action, $params) = $args;
+
+		if (!class_exists($controller)) {
+			return false;
+		}
+
+		$page = new $controller($app->getContext());
+		return $this->callNamed($page, $action, $params);
 	}
 
 	protected function callNamed($page, $method, $params)
@@ -126,7 +120,7 @@ class AuraRoutes extends Module
 			return false;
 		}
 
-		// don't use reflection unless we really need it!
+		// for better performance, don't use reflection unless we really need it
 		$pc = count($params);
 		if ($pc == 1) {
 		    return $page->$method(array_values($params)[0]);
@@ -154,7 +148,34 @@ class AuraRoutes extends Module
 				$args[] = $param->getDefaultValue();
 			}
 		}
+		
 		// invoke with the args, and done
 		return $method->invokeArgs($page, $args);
+	}
+
+	public function buildFqn($controller, $rootNS, $ns)
+	{
+
+		// we don't have a fqn controller, lets build it
+		if (substr($controller, 0, 1) !== '\\') {
+			
+			$controller = studly_case(str_replace('\\', '\\ ', $controller));
+			$namespace = $rootNS . '\\Controllers';
+
+			if ($ns) {
+				//we have a fqn namespace, use it
+				if (substr($ns, 0, 1) === '\\') {
+					$namespace = $ns;
+				} else {
+					$namespace = $namespace . '\\' . rtrim($ns, '\\');
+				}
+			}
+
+			if (!empty($namespace)) {
+				$controller = $namespace . '\\' . $controller;
+			}
+		}
+
+		return $controller;
 	}
 }
