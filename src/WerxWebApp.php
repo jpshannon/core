@@ -8,9 +8,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 
 /**
- * Base Web App runner
+ * A base werx web application
  * 
  * @property-read Request $request
+ * @property-read \werx\Config\Container $config
  */
 class WerxWebApp extends WerxApp
 {

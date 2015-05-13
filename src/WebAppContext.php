@@ -4,6 +4,18 @@ namespace werx\Core;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * The context information the app.
+ *
+ * All methods that can be accessed off of werx\Config\Container
+ * can be used via the context.
+ * 
+ * @method array	load()	load(string $group, $index = false)
+ * @method      	set()	set(string $key, mixed $value, string $index_name = 'default')
+ * @method mixed	get()	get(string $key, mixed $default_value = null, string $index_name = 'default')
+ * @method array 	all()	all(string $index = null)
+ * @method array 	clear() clear()
+ */
 class WebAppContext extends AppContext
 {
 

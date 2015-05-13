@@ -2,6 +2,18 @@
 
 namespace werx\Core;
 
+/**
+ * The context information the app.
+ *
+ * All methods that can be accessed off of werx\Config\Container
+ * can be used via the context.
+ * 
+ * @method array	load()	load(string $group, $index = false)
+ * @method      	set()	set(string $key, mixed $value, string $index_name = 'default')
+ * @method mixed	get()	get(string $key, mixed $default_value = null, string $index_name = 'default')
+ * @method array 	all()	all(string $index = null)
+ * @method array 	clear() clear()
+ */
 class AppContext
 {
 	/**
@@ -90,6 +102,16 @@ class AppContext
 	public function getApp()
 	{
 		return $this->app;
+	}
+
+	/**
+	 * Gets the underlying config store
+	 * 
+	 * @return \werx\Config\Container 
+	 */
+	public function getConfig()
+	{
+		return $this->config;
 	}
 }
 
