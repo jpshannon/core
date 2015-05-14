@@ -98,7 +98,7 @@ class Controller
 	 */
 	public function initializeRequest($request = null)
 	{
-		$this->request = $this->app->request;
+		$this->request = $this->app->getServices('requet');
 
 		// Shortcuts to the request object for cleaner syntax.
 		$this->input = new Input($this->request);
@@ -242,7 +242,7 @@ class Controller
 		$router = $this->app->router;
 		if ($apply_current_params) {
 			$route_data = array_merge(
-				$this->app['route_params'], 
+				$this->app['route_params'],
 				['controller' => $this->app['controller'], 'action' => $this->app['action']],
 				$route_data
 			);

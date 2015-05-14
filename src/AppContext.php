@@ -7,7 +7,7 @@ namespace werx\Core;
  *
  * All methods that can be accessed off of werx\Config\Container
  * can be used via the context.
- * 
+ *
  * @method array	load()	load(string $group, $index = false)
  * @method      	set()	set(string $key, mixed $value, string $index_name = 'default')
  * @method mixed	get()	get(string $key, mixed $default_value = null, string $index_name = 'default')
@@ -18,42 +18,42 @@ class AppContext
 {
 	/**
 	 * The application the context belongs to
-	 * 
+	 *
 	 * @var WerxApp
 	 */
 	protected $app;
 
 	/**
 	 * The config for this app
-	 * 
+	 *
 	 * @var \werx\Config\Container
 	 */
 	public $config;
 
 	/**
 	 * The base path of the application
-	 * 
+	 *
 	 * @var string
 	 */
 	public $base_path;
 
 	/**
 	 * The current application environment (dev, test, prod, etc)
-	 * 
+	 *
 	 * @var string
 	 */
 	protected $environment;
 
 	/**
 	 * Flag indicating if debug information should be included.
-	 * 
+	 *
 	 * @var bool
 	 */
 	public $debug;
 
 	/**
 	 * Flag indicating if the app was initiated by the cli
-	 * 
+	 *
 	 * @var bool
 	 */
 	public $cli;
@@ -65,7 +65,7 @@ class AppContext
 		$this->environment = $app['environment'];
 		$this->debug = $app['debug'] !== false;
 		$this->cli = php_sapi_name() == 'cli';
-		$this->config = $app->config;
+		$this->config = $app->getServices('config');
 	}
 
 	public function __call($method, $args = [])
@@ -75,7 +75,7 @@ class AppContext
 
 	/**
 	 * Resolves the phyiscal path to a resource
-	 * 
+	 *
 	 * @param  string $path
 	 * @return string
 	 */
@@ -86,7 +86,7 @@ class AppContext
 
 	/**
 	 * Gets current application environment (dev, test, prod, etc)
-	 * 
+	 *
 	 * @return string
 	 */
 	public function getEnvironment()
@@ -96,7 +96,7 @@ class AppContext
 
 	/**
 	 * Gets the application the context belongs to
-	 * 
+	 *
 	 * @return WerxApp|WerxWebApp
 	 */
 	public function getApp()
@@ -106,8 +106,8 @@ class AppContext
 
 	/**
 	 * Gets the underlying config store
-	 * 
-	 * @return \werx\Config\Container 
+	 *
+	 * @return \werx\Config\Container
 	 */
 	public function getConfig()
 	{

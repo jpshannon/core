@@ -16,7 +16,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * Register a collection of services all ato once
-	 * 
+	 *
 	 * @param  array $services
 	 * @return ServiceCollection
 	 */
@@ -29,8 +29,8 @@ final class ServiceCollection implements \ArrayAccess
 	}
 
 	/**
-	 * Set a new service 
-	 * 
+	 * Set a new service
+	 *
 	 * @param string  $key       The key of the service can be found with
 	 * @param mixed  $value      The value of the service
 	 * @param boolean $overwrite Overwrite the already configured service with the same name
@@ -48,7 +48,7 @@ final class ServiceCollection implements \ArrayAccess
 	 * Set a new service that should only be initialized once
 	 *
 	 * @param string $key      The key of the service can be found with
-	 * @param Closure $factory The method used to instantiate the object
+	 * @param \Closure $factory The method used to instantiate the object
 	 * @return ServiceCollection
 	 */
 	public function setSingleton($key, $factory)
@@ -79,7 +79,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * Determine if the service is registered
-	 * 
+	 *
 	 * @param  string  $key The key of the service
 	 * @return boolean
 	 */
@@ -96,7 +96,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Check if the offset exists
-	 * 
+	 *
 	 * @param  mixed $offset
 	 * @return boolean
 	 */
@@ -107,7 +107,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Get the specified offset
-	 * 
+	 *
 	 * @param  mixed $offset
 	 * @return mixed
 	 */
@@ -118,7 +118,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Set the value of the offset
-	 * 
+	 *
 	 * @param  string $offset
 	 * @param  mixed  $value
 	 */
@@ -129,7 +129,7 @@ final class ServiceCollection implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Unset the offset
-	 * 
+	 *
 	 * @param  mixed $offset
 	 */
 	public function offsetUnset ( $offset )

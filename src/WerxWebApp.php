@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A base werx web application
- * 
+ *
  * @property-read Request $request
  * @property-read \werx\Config\Container $config
  */
@@ -53,7 +53,11 @@ class WerxWebApp extends WerxApp
 		if ($response instanceof \Symfony\Component\HttpFoundation\Response) {
 			$response->send();
 		} else {
-			$this->pageNotFound()->send();
+            if ($response = $this->service->get('response',false)) {
+                $response->send();
+            } else {
+                $this->pageNotFound()->send();
+            }
 		}
 	}
 
