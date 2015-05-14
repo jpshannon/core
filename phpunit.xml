@@ -10,26 +10,26 @@
 		stopOnFailure="false"
 		syntaxCheck="true">
 
-    <testsuites>
-        <testsuite name="AllTests">
-            <directory suffix=".php">./tests/</directory>
-			<exclude>./tests/resources/</exclude>
-        </testsuite>
-    </testsuites>
+  <testsuites>
+    <testsuite name="AllTests">
+      <directory suffix=".php">./tests/</directory>
+      <exclude>./tests/resources/</exclude>
+    </testsuite>
+  </testsuites>
 
-<!--
+  <!--
 	<php>
 		<env name="" value="" />
 		<env name="" value="" />
 	</php>
 -->
-	
-    <filter>
-        <blacklist>
-            <directory>./vendor</directory>
-        </blacklist>
-        <whitelist>
-            <directory suffix=".php">src</directory>
-        </whitelist>
-    </filter>
+
+  <filter>
+    <blacklist>
+      <directory>./vendor</directory>
+    </blacklist>
+    <whitelist>
+      <directory suffix=".php">src</directory>
+    </whitelist>
+  </filter>
 </phpunit>

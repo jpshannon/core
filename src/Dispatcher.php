@@ -4,9 +4,9 @@ namespace werx\Core;
 
 class Dispatcher extends WerxWebApp
 {
-	public function __construct($settings = [])
+	public function __construct($context)
 	{
-		parent::__construct($settings);
+		parent::__construct($context);
 		$this->addModule(new Modules\AuraRoutes);
 	}
 }

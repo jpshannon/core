@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Name>werx.Core</Name>
+    <ProjectGuid>{8f1b29fb-c48e-407f-965b-9bf78e0f7a42}</ProjectGuid>
+    <RootNamespace>werx.Core</RootNamespace>
+    <OutputType>Library</OutputType>
+    <ProjectTypeGuids>{A0786B88-2ADB-4C21-ABE8-AA2D79766269}</ProjectTypeGuids>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <IncludeDebugInformation>true</IncludeDebugInformation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <IncludeDebugInformation>false</IncludeDebugInformation>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="src\Modules\AuraRoutes.php" />
+    <Compile Include="src\Modules\ConsoleDispatcher.php" />
+    <Compile Include="src\Modules\Database.php" />
+    <Compile Include="src\Modules\NativeSession.php" />
+    <Compile Include="src\AppContext.php" />
+    <Compile Include="src\Config.php" />
+    <Compile Include="src\Console.php" />
+    <Compile Include="src\ConsoleApp.php" />
+    <Compile Include="src\Controller.php" />
+    <Compile Include="src\Database.php" />
+    <Compile Include="src\Dispatcher.php" />
+    <Compile Include="src\Input.php" />
+    <Compile Include="src\Model.php" />
+    <Compile Include="src\Module.php" />
+    <Compile Include="src\ServiceCollection.php" />
+    <Compile Include="src\Template.php" />
+    <Compile Include="src\WebAppContext.php" />
+    <Compile Include="src\WerxApp.php" />
+    <Compile Include="src\WerxWebApp.php" />
+    <Compile Include="tests\resources\config\dev\envopts.php" />
+    <Compile Include="tests\resources\config\config.php" />
+    <Compile Include="tests\resources\config\default.php" />
+    <Compile Include="tests\resources\config\environment" />
+    <Compile Include="tests\resources\controllers\Console.php" />
+    <Compile Include="tests\resources\controllers\Home.php" />
+    <Compile Include="tests\resources\models\Beer.php" />
+    <Compile Include="tests\resources\models\Captain.php" />
+    <Compile Include="tests\resources\models\CaptainComplex.php" />
+    <Compile Include="tests\resources\storage\beers.sqlite" />
+    <Compile Include="tests\resources\storage\example.sqlite" />
+    <Compile Include="tests\resources\views\layouts\default.php" />
+    <Compile Include="tests\resources\views\foo.php" />
+    <Compile Include="tests\resources\views\foo_array.php" />
+    <Compile Include="tests\resources\views\prefill.php" />
+    <Compile Include="tests\ConfigTests.php" />
+    <Compile Include="tests\ControllerTests.php" />
+    <Compile Include="tests\DatabaseTests.php" />
+    <Compile Include="tests\InputTests.php" />
+    <Compile Include="tests\TemplateTests.php" />
+    <Compile Include=".gitignore" />
+    <Compile Include=".travis.yml" />
+    <Compile Include="codesniffer" />
+    <Compile Include="composer.json" />
+    <Compile Include="composer.lock" />
+    <Compile Include="LICENSE.txt" />
+    <Compile Include="phpunit.php" />
+    <Compile Include="phpunit.xml" />
+    <Compile Include="PSR2Tabs.xml" />
+    <Compile Include="README.md" />
+    <Compile Include="Werx.sln" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\Modules" />
+    <Folder Include="src" />
+    <Folder Include="tests\resources\config\dev" />
+    <Folder Include="tests\resources\config" />
+    <Folder Include="tests\resources\controllers" />
+    <Folder Include="tests\resources\models" />
+    <Folder Include="tests\resources\storage" />
+    <Folder Include="tests\resources\views\layouts" />
+    <Folder Include="tests\resources\views" />
+    <Folder Include="tests\resources" />
+    <Folder Include="tests" />
+  </ItemGroup>
+</Project>
