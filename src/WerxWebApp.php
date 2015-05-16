@@ -47,22 +47,52 @@ class WerxWebApp extends WerxApp
 		return $services;
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function run()
 	{
 		$response = parent::run();
-		if ($response instanceof \Symfony\Component\HttpFoundation\Response) {
+		if ($override_response = $this->getResponse()) {
+			$override_response->send();
+		} elseif ($response instanceof \Symfony\Component\HttpFoundation\Response) {
 			$response->send();
 		} else {
-            if ($response = $this->service->get('response',false)) {
-                $response->send();
-            } else {
-                $this->pageNotFound()->send();
-            }
+			$this->pageNotFound()->send();
 		}
 	}
 
 	/**
+	 * Set Response to be sent for the current request
+	 *
+	 * Use this to override any standard response the application might normally use.
+	 * 
+	 * @param Response $response
+	 * @return WerxWebApp
+	 */
+	public function setResponse(Response $response)
+	{
+		$this->services->set('response', $response, true);
+		return $this;
+	}
+
+	/**
+	 * Get Response to be sent
+	 *
+	 * If set, the application will use the Response instead of the response from the module pipeline 
+	 * 
+	 * @return Respnose|bool
+	 */
+	public function getResponse()
+	{
+		return $this->services->get('response', false);
+	}
+
+	/**
+	 * Generate a 404 response
+	 * 
 	 * @param string $message
+	 * @return Response
 	 */
 	public function pageNotFound($message = 'Not Found', $content_type = "text/plain")
 	{

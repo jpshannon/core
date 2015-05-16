@@ -111,7 +111,10 @@ class AuraRoutes extends Module
 		}
 
 		$page = new $controller($app->getContext());
-		return $this->callNamed($page, $action, $params);
+		if (!$app->getResponse()) {
+			return $this->callNamed($page, $action, $params);
+		}
+		return false;
 	}
 
 	protected function callNamed($page, $method, $params)
@@ -123,7 +126,7 @@ class AuraRoutes extends Module
 		// for better performance, don't use reflection unless we really need it
 		$pc = count($params);
 		if ($pc == 1) {
-		    return $page->$method(array_values($params)[0]);
+			return $page->$method(array_values($params)[0]);
 		} elseif ($pc == 0) {
 			return $page->$method(null); // for backwards compatibility with Core::Dispatcher
 		}

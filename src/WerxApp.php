@@ -3,9 +3,9 @@
 namespace werx\Core;
 
 /**
- * WerxApp.
+ * A Werx Application
  *
- * @property /werx/Config/Container $config
+ * @property-read /werx/Config/Container $config
  */
 abstract class WerxApp implements \ArrayAccess
 {
@@ -117,13 +117,14 @@ abstract class WerxApp implements \ArrayAccess
 	/**
 	 * Get the service collection registered with the application
 	 * 
-	 * @param  string|null $service Get the specific services instead of the collection
-	 * @return ServiceCollection|mixed If no services is specified, the full collection of services.
+	 * @param  string $service Get the specific services instead of the collection
+	 * @param  bool   $default The $default value to return if no service can be found
+	 * @return ServiceCollection|mixed If no service is specified, the full collection of services.
 	 */
-	public function getServices($service = null)
+	public function getServices($service = null, $default = false)
 	{
 		if (!empty($service)) {
-			return $this->services->get($service);
+			return $this->services->get($service, $default);
 		}
 		return $this->services;
 	}

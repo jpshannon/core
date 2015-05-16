@@ -62,10 +62,16 @@ class Template extends \League\Plates\Template
 	 * Output the content instead of just render.
 	 * @param $view
 	 * @param array $data
+	 * @return Response 
 	 */
 	public function output($view, array $data = null)
 	{
-		return new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
+		$reponse = new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
+		$app = WerxApp::getInstance();
+		if ($app->getServices('config')->get('werx1_0')) {
+			$app->setResponse($response);
+		}
+		return $response;
 	}
 
 	/**
