@@ -72,7 +72,7 @@ final class ServiceCollection implements \ArrayAccess
 	public function get($key, $default = null)
 	{
 		if(!$this->has($key)) {
-			$this->evaluate($default);
+			return $this->evaluate($default);
 		}
 		return $this->evaluate($this->services[$key]);
 	}

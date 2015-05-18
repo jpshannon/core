@@ -98,7 +98,7 @@ class Controller
 	 */
 	public function initializeRequest($request = null)
 	{
-		$this->request = $this->app->getServices('requet');
+		$this->request = $this->app->getServices('request');
 
 		// Shortcuts to the request object for cleaner syntax.
 		$this->input = new Input($this->request);
