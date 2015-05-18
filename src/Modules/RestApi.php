@@ -10,11 +10,11 @@ use Aura\Router\Router;
  */
 class RestApi extends \werx\Core\Module
 {
-	protected $skip;
+	protected $is_api_request;
 
 	/**
-     * @var \Symfony\Component\HttpFoundation\Request
-     */
+	 * @var \Symfony\Component\HttpFoundation\Request
+	 */
 	protected $request;
 
 	public function config(WerxApp $app)
@@ -29,21 +29,15 @@ class RestApi extends \werx\Core\Module
             $this->initDefaultApiRoutes($router, $endpoint, $api_namespace);
         }
 
-		if (!str_contains($this->request->getPathInfo(), $endpoint)) {
-			$this->skip = true;
-			return;
-		}
-
-		$headers = $config->get('api:headers', []);
-		foreach ($headers as $key => $value)
-		{
-			header("$key: $value");
-		}
+		$this->is_api_request = str_contains($this->request->getPathInfo(), $endpoint);
 	}
 
-    public function initDefaultApiRoutes(Router $router, $endpoint)
+    public function initDefaultApiRoutes(Router $router, $endpoint, $namespace)
     {
-        $router->attach('api', $endpoint . '/{controller}', function($router) {
+        $router->attach('api', $endpoint . '/{controller}', function($router) use($namespace) {
+            if (!empty($namespace)) {
+                $router->addValues(['namespace' => $namespace]);
+            }
             $router->addGet('all', '', 'all');
             $router->addGet('add', '/add', 'add');
             $router->addGet('get', '/{id}', 'get');
@@ -52,26 +46,22 @@ class RestApi extends \werx\Core\Module
             $router->addDelete('delete', '/{id}', 'delete');
             $router->addOptions('options', '', function($params) {
                 $app = WerxApp::getInstance();
-                $response = new \Symfony\Component\HttpFoundation\Response();
-                $response->headers->add(["Allow" => $app->getServices('config')->get('api:options:allow', 'GET, POST, PUT, DELETE, OPTIONS')]);
+                $response = new \Symfony\Component\HttpFoundation\Response(null, 204);
+                $response->headers->add(["Allow" => $app->getServices('config')->get('api:options:allow', 'GET, HEAD, POST, PUT, DELETE, OPTIONS')]);
                 $response->sendHeaders();
                 return $response;
             });
         });
-
     }
 
 	public function handle(WerxApp $app)
 	{
-		if ($this->skip) {
+		if (!$this->is_api_request) {
 			return $this->handleNext($app);
 		}
 
         try {
-
-			// @todo add more intelligent handling??
-			return $this->handleNext($app);
-
+			$response = $this->handleNext($app);
 		}
         catch (\Exception $e) {
 
@@ -80,10 +70,14 @@ class RestApi extends \werx\Core\Module
 				$message = "There was a problem with the application.";
 			}
 
-			$response = new \Symfony\Component\HttpFoundation\JsonResponse();
-			$response->setData(['errors' => true, 'message' => $message]);
-			$response->setStatusCode(500);
-			return $response;
+			$response = \werx\Core\Api::negotiateResponse(['errors' => true, 'message' => $message], 500);
 		}
+
+        $headers = $app->getServices('config')->get('api:headers', []);
+		foreach ($headers as $key => $value)
+		{
+            $response->headers->add($key, $value);
+		}
+        return $response;
 	}
 }
