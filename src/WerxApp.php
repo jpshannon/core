@@ -20,7 +20,7 @@ abstract class WerxApp implements \ArrayAccess
 	 * Modules to be run with the app
 	 *
 	 * Modules are executed first in last out. Typically you will register your main module first.
-	 * 
+	 *
 	 * @var Module[]
 	 */
 	protected $modules = [];
@@ -36,7 +36,7 @@ abstract class WerxApp implements \ArrayAccess
 	 * Collection of services configured for the app.
 	 *
 	 * Services should be registred from the initServices method or from Modules.
-	 * 
+	 *
 	 * @var ServiceCollection
 	 */
 	protected $services;
@@ -46,14 +46,14 @@ abstract class WerxApp implements \ArrayAccess
 	 *
 	 * Settings are a combination of WerxApp::$defaultSettings, $settings passed in from the constructor
 	 * and settings found in config.php
-	 * 
+	 *
 	 * @var []
 	 */
 	protected $settings;
 
 	/**
 	 * Context for the app being executed
-	 * 
+	 *
 	 * @var AppContext|WebAppContext
 	 */
 	protected $context;
@@ -87,7 +87,7 @@ abstract class WerxApp implements \ArrayAccess
 	 * Adds a module to be run with the app.
 	 *
 	 * Modules are loaded FIFO.
-	 * 
+	 *
 	 * @param Module $module
 	 * @return WerxApp
 	 */
@@ -116,7 +116,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Get the service collection registered with the application
-	 * 
+	 *
 	 * @param  string $service Get the specific services instead of the collection
 	 * @param  bool   $default The $default value to return if no service can be found
 	 * @return ServiceCollection|mixed If no service is specified, the full collection of services.
@@ -133,7 +133,7 @@ abstract class WerxApp implements \ArrayAccess
 	 * Sets the name of the application.
 	 *
 	 * Defaults to the value of WerxApp::$settings["name"]
-	 * 
+	 *
 	 * @param string $name
 	 */
 	public function setName($name)
@@ -144,7 +144,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Gets the name of the app
-	 * 
+	 *
 	 * @return string
 	 */
 	public function getName()
@@ -154,7 +154,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Gets the context of the application
-	 * 
+	 *
 	 * @return AppContext|WebAppContext
 	 */
 	public function getContext()
@@ -167,7 +167,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Creates the config container for the application and registers it as a service
-	 * 
+	 *
 	 * @return \werx\Config\Container
 	 */
 	protected function createConfig()
@@ -182,7 +182,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Sets the application environment
-	 * 
+	 *
 	 * @param string $environment
 	 */
 	protected function setEnvironment($environment = 'local')
@@ -194,7 +194,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Initialize services for the application
-	 * 
+	 *
 	 * @param  ServiceCollection $services
 	 * @return ServiceCollection
 	 */
@@ -205,7 +205,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Get the source directory of the application
-	 * 
+	 *
 	 * @return string
 	 */
 	public function getSrcDir()
@@ -215,7 +215,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Get the path to resource
-	 * 
+	 *
 	 * @param string $file
 	 * @return string
 	 */
@@ -226,7 +226,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccces: Check if offset exists
-	 * 
+	 *
 	 * @param mixed $offset
 	 * @return bool
 	 */
@@ -237,7 +237,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Get the value at the requested offset
-	 * 
+	 *
 	 * @param mixed $offset
 	 * @return mixed
 	 */
@@ -248,7 +248,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Check the value of the requested offset
-	 * 
+	 *
 	 * @param mixed $offset
 	 * @param mixed $value
 	 */
@@ -259,7 +259,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * ArrayAccess: Unset the value of the requested offset
-	 * 
+	 *
 	 * @param mixed $offset
 	 */
 	public function offsetUnset($offset)
@@ -269,7 +269,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Get a WerxApp instance by name
-	 * 
+	 *
 	 * @param string $name
 	 * @return null|WerxApp
 	 */
@@ -280,7 +280,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Add a WerxApp instance
-	 * 
+	 *
 	 * @param WerxApp $app
 	 */
 	public static function addInstance(WerxApp $app)
@@ -293,7 +293,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Remove a WerxApp instance
-	 * 
+	 *
 	 * @param WerxApp $app
 	 */
 	public static function removeInstance($app_name)
@@ -303,7 +303,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Defaults settings of a WerxApp
-	 * 
+	 *
 	 * @return array
 	 */
 	public static function defaultSettings()
@@ -323,13 +323,14 @@ abstract class WerxApp implements \ArrayAccess
 				"controller" => "home",
 				"action" => "index",
 				"environment" => "local",
-				"expose_script_name" => false
+				"expose_script_name" => false,
+				"compatibility_mode" => "2.0"
 			];
 	}
 
 	/**
 	 * Combines 1 or more paths together
-	 * 
+	 *
 	 * @param string $base The base path
 	 * @param string $p,... The path to add
 	 * @return string The combined path
@@ -357,7 +358,7 @@ abstract class WerxApp implements \ArrayAccess
 
 	/**
 	 * Combines 1 or more paths together using the a connector suitable for the web
-	 * 
+	 *
 	 * @param string $base The base path
 	 * @param string $p,... The path to add
 	 * @return string The combined path

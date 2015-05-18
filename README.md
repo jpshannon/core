@@ -28,8 +28,11 @@ Installation of this package is easy with Composer. If you aren't familiar with 
 ## Suggested Directory Structure
 
 - Your application resides in `src/` and has a base namespace of `Example\Project`
+    - Create console/web applications by extending `werx\Core\WerxApp` and `werx\Core\WerxWebApp`
 - Your controllers are in `src/controllers/` and have a namespace of `Example\Project\Controllers`
 	- Your controllers extend `werx\Core\Controller`
+    - Your console controllers extend `werx\Core\Console`
+    - Your api controllers extend `werx\Core\Api`
 
 ```
 src/
@@ -43,11 +46,13 @@ src/
 	controllers/
 		Home.php
 	models/
+    moduals/
 	views/
 		home/
 			index.php
 		layouts/
 			default.php
+    ExampleProjectApp.php
 vendor/
 	Composer's installation directory
 web/
@@ -64,33 +69,26 @@ Your `web/index.php` serves as the front controller and contains the following c
 
 namespace Example\Project; // Change this to whatever base namespace you are using in your project.
 
-$app_dir = dirname(__DIR__);
+$autoload_dir = dirname(__DIR__);
 
 // Use Composer's autoloader.
-require_once $app_dir . '/vendor/autoload.php';
+require_once $autoload_dir . '/vendor/autoload.php';
 
-// Pass a couple options to our dispatcher.
-$opts = ['app_dir' => $app_dir, 'namespace' => __NAMESPACE__];
-
-$app = new \werx\Core\Dispatcher($opts);
-
-// Dispatch the request.
-$app->dispatch();
+$app = new ExampleProjectApp(); // \werx\Core\Dispatcher is an example of a minimal application
+// optionaly customize modules: ex $app->addModule(new \werx\Core\Modules\AuraRoutes);
+// Run the application.
+$app->run();
 ```
 
-This will turn control of dispatching the request to the werx.Core dispatcher.
+This will run any the application, calling any configured module.
 
 ## Routing
 Routing is handled by the [Aura Router](https://github.com/auraphp/Aura.Router).
 
-Some sensible default routes are provided out of the box in the dispatcher.
+A sensible default routes is provided out of the box.
 
 ``` php
-$router->add(null, null);
-$router->add(null, '/');
-$router->add(null, '/{controller}');
-$router->add(null, '/{controller}/{action}');
-$router->add(null, '/{controller}/{action}/{id}');
+$router->add('default, {/controller,action,id});
 ```
 
 The following will all call the `index()` method of your `Home` controller.
@@ -98,6 +96,18 @@ The following will all call the `index()` method of your `Home` controller.
 >- http://example.com/path/to/index.php
 >- http://example.com/path/to/index.php/home
 >- http://example.com/path/to/index.php/home/index
+
+Or you can choose not to expose script names (default)
+``` php
+<?php
+# File: src/config/config.php
+return ["expose_script_names" => false];
+```
+
+>- http://example.com/path/to/
+>- http://example.com/path/to/home
+>- http://example.com/path/to/home/index
+
 
 This one will also call `index`, but will also pass the value "1" to the index method.
 
@@ -126,13 +136,20 @@ The configuration manger is built on [werx\Config](https://github.com/werx/confi
 
 ``` php
 // Load our primary config file.
-$this->config->load('config');
+$this->config->load('config'); // preloaded by default, so not really necessary
 
 $something = $this->config->get('something');
 
 // You can load any configuration file...
 $this->config->load('database');
 
+// Or you can get it from the main config.php and forget ever calling load again
+$this->config->get('database');
+```
+``` php
+<?php
+# File: src/config/config.php
+return ["database" => "#database"];
 ```
 
 ### Multiple Environment Configuration Support
@@ -151,33 +168,65 @@ Then load your config as you normally would. The configuration items will be mer
 
 See the [werx\Config Docs](https://github.com/werx/config/blob/master/README.md) for more information on configuration management.
 
-### Extra Configuration Helper Methods
+### Extra Context Helper Methods
 
-#### getBaseUrl()
+#### getUrl()
 
-Returns the absolute url to the base of your application without the filename (ex. index.php). Accepts an optional path to append to the base url as an argument.
+Returns the absolute url to the base of your application.
+
+Parameters
+    - `$path`: path to get the url for
+    - `$qs`: optional array of query string parameters
+
+Avaliables settings:
+    - `WerxApp::$settings['expose_script_name']`: Whether or not to expose the executing script name
 
 ``` php
-var_dump($this->config->getBaseUrl());
-// http://example.com/
+var_dump($this->context->getUrl());
+// /path/to/index.php ('expose_script_name' = true)
+// /path/to/ ('expose_script_name' = false [default])
 
-var_dump($this->config->getBaseUrl('image.jpg'));
-// http://example.com/image.jpg
-
-var_dump($this->config->getBaseUrl('home/index'));
-// http://example.com/home/index
+var_dump($this->config->getUrl('home/index')); // with expose_script_name = true
+// /path/to/index.php/home/index ('expose_script_name' = true)
+// /path/to/home/index ('expose_script_name' = false [default])
 ```
 
-#### getSiteUrl()
+#### getUri()
 
-Returns the absolute url to the base of your application, including the filename (ex. index.php). Accepts an optional path to append to the site url as an argument.
+Returns the absolute uri of your application.
+
+Parameters:
+    - `$path`: path to get the url for
+    - `$qs`: optional array of query string parameters
+
+Avaliables settings:
+    - `WerxApp::$settings['expose_script_name']`: Whether or not to expose the executing script name
+    - `WerxApp::$settings['base_url']`: Override the schema and host of the app ex: "https://example.com"
+
 
 ``` php
-var_dump($this->config->getSiteUrl('home/index'));
-// http://example.com/index.php
+var_dump($this->config->getUri('home/index'));
+// https://example.com/index.php/home/index ('expose_script_name' = true)
+// https://example.com/home/index ('expose_script_name' = false [default])
+```
 
-var_dump($this->config->getSiteUrl('home/index'));
-// http://example.com/index.php/home/index
+#### getAsset()
+
+Returns the absolute url to the base of your application.
+
+Parameters
+    - `$path`: path to get the url for
+    - `$as_uri`: optionally include the full uri to the asset
+
+Avaliables settings:
+    - `WerxApp::$settings['expose_script_name']`: Whether or not to expose the executing script name
+
+``` php
+var_dump($this->context->getAsset('/assets/css/site.css'));
+// /path/to/assets/css/site.css
+
+var_dump($this->context->getAsset('/assets/css/site.css',true));
+// http://example.com/path/to/assets/css/site.css
 ```
 
 ## Templates
@@ -196,16 +245,21 @@ class Home extends Controller
 		$this->template->layout('layouts/default');
 	}
 
+    // you should always return a Response object!!
 	public function index()
 	{
 		// Set some variables for all views.
 		$this->template->page_title = 'Werx Skeleton';
 
 		// Render and Display the home/index view, passing a variable named "heading".
-		$this->template->output('home/index', ['heading' => 'Congratulations, it worked!']);
+		return $this->view('home/index', ['heading' => 'Congratulations, it worked!']); Or
+        //return $this->view('index', ['heading' => 'Congratulations, it worked!']); Or
+        //return $this->view(['heading' => 'Congratulations, it worked!']);
+        // try not to: return $this->template->output('home/index', ['heading' => 'Congratulations, it worked!']);
 
-		// Same as above, but return the rendered content instead of displaying.
+		// Same as above, but return the rendered content instead of displaying...why who knows
 		// $content = $this->template->render('home/index', ['heading' => 'Congratulations, it worked!']);
+        // return $this->content($content);
 	}
 }
 ```
@@ -243,7 +297,7 @@ class Home extends Controller
 		$this->template->setPrefill($this->session->get('prefill'));
 
 		// Render and Display the home/index view.
-		$this->template->output('home/index');
+		return $this->template->output('home/index');
 	}
 }
 ```
@@ -281,20 +335,20 @@ class Home extends Controller
 	// Internal Redirect (another resource in our app)
 	public function internalRedirect()
 	{
-		$this->redirect('home/foo'); # Foo method of the Home Controller.
+		return $this->redirect('home/foo'); # Foo method of the Home Controller.
 	}
 
 	// External Redirect
 	public function externalRedirect()
 	{
-		$this->redirect('http://www.google.com');
+		return $this->redirect('http://www.google.com');
 	}
 
 	// Output data json-encoded with proper headers.
 	public function getJson()
 	{
 		$data = (object) ['items' => ['foo', 'bar']];
-		$this->json($data);
+		return $this->json($data);
 	}
 
 	// Output data json-encoded with proper headers and callback.
@@ -302,7 +356,7 @@ class Home extends Controller
 	public function getJsonp()
 	{
 		$data = (object) ['items' => ['foo', 'bar']];
-		$this->jsonp($data, 'callback');
+		return $this->jsonp($data, 'callback');
 	}
 }
 ```
@@ -337,6 +391,9 @@ $get = $this->request->query->all();
 
 # Werx way to access the entire $_GET array
 $get = $this->input->get();
+
+# Werx way to access body from PUT/POST
+$content = $this->input->content();
 ```
 
 `null` is returned when trying to access a non-existent attribute from get/post. Pass a 2nd parameter to `$this->input->get()` or `$this->input->post()` to serve as the default value if you want something other than `null`.

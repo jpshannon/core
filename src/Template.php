@@ -68,7 +68,7 @@ class Template extends \League\Plates\Template
 	{
 		$response = new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
 		$app = WerxApp::getInstance();
-		if ($app->getServices('config')->get('werx1_0')) {
+		if ($app['compatibility_mode'] === '1.0') {
 			$app->setResponse($response);
 		}
 		return $response;

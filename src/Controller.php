@@ -143,7 +143,11 @@ class Controller
 		 */
 		session_write_close();
 
-		return new RedirectResponse($url);
+		$response = new RedirectResponse($url);
+		if ($this->app['compatibility_mode'] == "1.0") {
+			$this->app->setResponse($response);
+		}
+		return $response;
 	}
 
 	/**
@@ -157,6 +161,9 @@ class Controller
 	{
 		$response = new JsonResponse(null, $status, $headers);
 		$response->setData($content);
+		if ($this->app['compatibility_mode'] == "1.0") {
+			$this->app->setResponse($response);
+		}
 		return $response;
 	}
 
@@ -171,6 +178,9 @@ class Controller
 		$response = new JsonResponse();
 		$response->setData($content);
 		$response->setCallback($jsonCallback);
+		if ($this->app['compatibility_mode'] == "1.0") {
+			$this->app->setResponse($response);
+		}
 		return $response;
 	}
 
@@ -199,6 +209,16 @@ class Controller
 	public function viewData()
 	{
 		return $this->view_data;
+	}
+
+	public function content($content, $content_type = "text/html")
+	{
+		$response = new Response($content, Response::HTTP_OK);
+		$response->headers->set("Content-Type", $content_type);
+		if ($this->app['compatibility_mode'] == "1.0") {
+			$this->app->setResponse($response);
+		}
+		return $response;
 	}
 
 	public function asset($resource)

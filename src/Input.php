@@ -54,16 +54,12 @@ class Input
 		}
 	}
 
-	public function content($as_array = true)
+	public function content()
 	{
 		if ($this->request->getContentType() === "json") {
-			return json_decode($this->request->getContent(), $as_array);
+			return json_decode($this->request->getContent());
 		}
 
-		$data = $this->request->request->all();
-		if ($as_array === false) {
-			$data = (object) $data;
-		}
-		return $data;
+		return $this->request->request->all();
 	}
 }
