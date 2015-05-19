@@ -45,8 +45,8 @@ abstract class Api extends Controller
 		return static::negotiateResponse(['errors'=> $errors, 'message' => $message], Response::HTTP_UNPROCESSABLE_ENTITY);
 	}
 
-	private static $formats = [];
-	private $negotiator = null;
+	static $formats = [];
+	static $negotiator = null;
 
 	public static function init()
 	{
@@ -68,7 +68,7 @@ abstract class Api extends Controller
 
 		$best = $negotiator->getBestFormat($accept, $available);
 
-		if (static::isAvailable($best)) {
+		if ( in_array($best, $available)) {
 			$formatter = static::$formats[$best];
 			return $formatter($content, $status_code, $headers);
 		}
