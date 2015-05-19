@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace werx\Core;
 
 /**
@@ -33,4 +33,4 @@ abstract class Console
 			die("This is only available from CLI.\n");
 		}
 	}
-} 
+}

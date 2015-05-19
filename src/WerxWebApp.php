@@ -66,7 +66,7 @@ class WerxWebApp extends WerxApp
 	 * Set Response to be sent for the current request
 	 *
 	 * Use this to override any standard response the application might normally use.
-	 * 
+	 *
 	 * @param Response $response
 	 * @return WerxWebApp
 	 */
@@ -79,8 +79,8 @@ class WerxWebApp extends WerxApp
 	/**
 	 * Get Response to be sent
 	 *
-	 * If set, the application will use the Response instead of the response from the module pipeline 
-	 * 
+	 * If set, the application will use the Response instead of the response from the module pipeline
+	 *
 	 * @return Respnose|bool
 	 */
 	public function getResponse()
@@ -90,12 +90,28 @@ class WerxWebApp extends WerxApp
 
 	/**
 	 * Generate a 404 response
-	 * 
+	 *
 	 * @param string $message
 	 * @return Response
 	 */
 	public function pageNotFound($message = 'Not Found', $content_type = "text/plain")
 	{
 		return new Response($message, 404, ['Content-Type' => $content_type]);
+	}
+
+	/**
+	 * Register routes for the application
+	 *
+	 * @param \Aura\Router\RouteCollection $router
+	 * @return bool Return true to register the default route, false othewise
+	 */
+	public function registerRoutes(\Aura\Router\RouteCollection $router)
+	{
+		$routes_file = $this->getAppResourcePath('config/routes.php');
+		if (file_exists($routes_file)) {
+			// Let the app specify it's own routes.
+			include_once($routes_file);
+		}
+		return true;
 	}
 }

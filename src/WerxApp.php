@@ -130,6 +130,22 @@ abstract class WerxApp implements \ArrayAccess
 	}
 
 	/**
+	 * Get the application config container
+	 *
+	 * @param string $config The index of the config item to retrieve
+	 * @param mixed $default The default value to return if no config with the given index can be found.
+	 * @return \werx\Config\Container|mixed If no config item is passed.
+	 */
+	public function getConfig($config = null, $default = false)
+	{
+		$config = $this->services->get('config');
+		if (!empty($config)) {
+			return $config->get($config, $default);
+		}
+		return $config;
+	}
+
+	/**
 	 * Sets the name of the application.
 	 *
 	 * Defaults to the value of WerxApp::$settings["name"]

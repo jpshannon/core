@@ -21,8 +21,9 @@ class AuraRoutes extends Module
 		});
 		$this->intializeRoutes($app);
 
-		$route = $this->match($services->get('router'), $services->get('request')->getPathInfo(), $_SERVER);
-		$this->args = $this->getAction($route, $app);
+		if ($route = $this->match($services->get('router'), $services->get('request')->getPathInfo(), $_SERVER)) {
+			$this->args = $this->getAction($route, $app);
+		}
 	}
 
 	public function handle(WerxApp $app)
@@ -32,16 +33,10 @@ class AuraRoutes extends Module
 
 	public function intializeRoutes(WerxApp $app)
 	{
-		$routes_file = $app->getAppResourcePath('config/routes.php');
-
 		$router = $app->getServices('router');
-		if (file_exists($routes_file)) {
-			// Let the app specify it's own routes.
-			include_once($routes_file);
-		}
-		
+
 		$routes = $router->getRoutes();
-		if (empty($routes) || !array_key_exists('default', $routes)) {
+		if ($app->registerRoutes($routes)) {
 			$router->add('default', '{/controller,action,id}')
 				->setValues(['controller' => $app['controller'], 'action' => $app['action']]);
 		}
@@ -56,7 +51,6 @@ class AuraRoutes extends Module
 
 		// Find a matching route
 		$route = $router->match($path, $server);
-
 		if (!$route) {
 			return false;
 		}
@@ -78,10 +72,10 @@ class AuraRoutes extends Module
 		if (isset($route->params['controller'])) {
 			$controller = $route->params['controller'];
 		}
-		
+
 		$routeNs = (isset($route->params['namespace']) ? $route->params['namespace'] : null);
 		$controller = $this->buildFqn($controller, $app['namespace'], $routeNs);
-		
+
 		$app['controller'] = strtolower(substr(strrchr($controller, '\\'), 1));
 
 		// does the route indicate an action?
@@ -151,7 +145,7 @@ class AuraRoutes extends Module
 				$args[] = $param->getDefaultValue();
 			}
 		}
-		
+
 		// invoke with the args, and done
 		return $method->invokeArgs($page, $args);
 	}
@@ -161,7 +155,7 @@ class AuraRoutes extends Module
 
 		// we don't have a fqn controller, lets build it
 		if (substr($controller, 0, 1) !== '\\') {
-			
+
 			$controller = studly_case(str_replace('\\', '\\ ', $controller));
 			$namespace = $rootNS . '\\Controllers';
 

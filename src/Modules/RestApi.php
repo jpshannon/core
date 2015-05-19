@@ -3,7 +3,7 @@
 namespace werx\Core\Modules;
 
 use \werx\Core\WerxApp;
-use Aura\Router\Router;
+use Aura\Router\RouteCollection;
 
 /**
  * Rest.
@@ -19,40 +19,34 @@ class RestApi extends \werx\Core\Module
 
 	public function config(WerxApp $app)
 	{
-		$config = $app->getContext()->config;
 		$this->request = $app->getServices("request");
-
-        $endpoint = $config->get('api:endpoint', '/api');
-        $api_namespace = $config->get('api:namespace', false);
-
-        if ($router = $app->getServices('router')) {
-            $this->initDefaultApiRoutes($router, $endpoint, $api_namespace);
-        }
-
-		$this->is_api_request = str_contains($this->request->getPathInfo(), $endpoint);
+		$this->is_api_request = str_contains($this->request->getPathInfo(), $app->getConfig('api:endpoint'));
 	}
 
-    public function initDefaultApiRoutes(Router $router, $endpoint, $namespace)
-    {
-        $router->attach('api', $endpoint . '/{controller}', function($router) use($namespace) {
-            if (!empty($namespace)) {
-                $router->addValues(['namespace' => $namespace]);
-            }
-            $router->addGet('all', '', 'all');
-            $router->addGet('add', '/add', 'add');
-            $router->addGet('get', '/{id}', 'get');
-            $router->addPost('post','', 'post');
-            $router->addPut('put','/{id}', 'put');
-            $router->addDelete('delete', '/{id}', 'delete');
-            $router->addOptions('options', '', function($params) {
-                $app = WerxApp::getInstance();
-                $response = new \Symfony\Component\HttpFoundation\Response(null, 204);
-                $response->headers->add(["Allow" => $app->getServices('config')->get('api:options:allow', 'GET, HEAD, POST, PUT, DELETE, OPTIONS')]);
-                $response->sendHeaders();
-                return $response;
-            });
-        });
-    }
+	public static function registerApiRoutes(RouteCollection $router, $endpoint = '/api', $version = '', $route_name = 'api')
+	{
+		if (!empty($version)) {
+			$endpoint .= '/'.$version;
+		}
+		$router->attach($route_name, $endpoint . '/{controller}', function($router) use($version) {
+			if (!empty($version)) {
+				$router->addValues(['namespace' => $version]);
+			}
+			$router->addGet('get', '/{id}', 'get');
+			$router->addGet('add', '/add', 'add');
+			$router->addGet('all', '', 'all');
+			$router->addPost('post','', 'post');
+			$router->addPut('put','/{id}', 'put');
+			$router->addDelete('delete', '/{id}', 'delete');
+			$router->addOptions('options', '', function($params) {
+				$app = WerxApp::getInstance();
+				$response = new \Symfony\Component\HttpFoundation\Response(null, 204);
+				$response->headers->add(["Allow" => $app->getServices('config')->get('api:options:allow', 'GET, HEAD, POST, PUT, DELETE, OPTIONS')]);
+				$response->sendHeaders();
+				return $response;
+			});
+		});
+	}
 
 	public function handle(WerxApp $app)
 	{
@@ -60,10 +54,10 @@ class RestApi extends \werx\Core\Module
 			return $this->handleNext($app);
 		}
 
-        try {
+		try {
 			$response = $this->handleNext($app);
 		}
-        catch (\Exception $e) {
+		catch (\Exception $e) {
 
 			$message = $e->getMessage();
 			if ($app['debug'] === false) {
@@ -73,11 +67,11 @@ class RestApi extends \werx\Core\Module
 			$response = \werx\Core\Api::negotiateResponse(['errors' => true, 'message' => $message], 500);
 		}
 
-        $headers = $app->getServices('config')->get('api:headers', []);
+		$headers = $app->getServices('config')->get('api:headers', []);
 		foreach ($headers as $key => $value)
 		{
-            $response->headers->add($key, $value);
+			$response->headers->add($key, $value);
 		}
-        return $response;
+		return $response;
 	}
 }

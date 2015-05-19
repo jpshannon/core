@@ -17,7 +17,7 @@ namespace werx\Core;
 class Config
 {
 	protected $context;
-	
+
 	public function __construct($base_path = null)
 	{
 		$this->context = $base_path instanceof AppContext ? $base_path : WerxApp::getInstance()->getContext();
