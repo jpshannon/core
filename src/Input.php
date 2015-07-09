@@ -57,7 +57,7 @@ class Input
 	public function content()
 	{
 		if ($this->request->getContentType() === "json") {
-			return json_decode($this->request->getContent());
+			return json_decode($this->request->getContent(), true);
 		}
 
 		return $this->request->request->all();
