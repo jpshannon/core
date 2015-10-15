@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class Controller
 {
 	/**
-	 * @var \werx\Core\Template $template
+	 * @var \werx\Core\ViewEngine $template
 	 */
 	public $template;
 
@@ -75,20 +75,9 @@ class Controller
 	 *
 	 * @param string $directory Filesystem path to the views directory.
 	 */
-	public function initializeTemplate($directory = null)
+	public function initializeTemplate()
 	{
-		if (empty($directory)) {
-			$directory = $this->context->getViewsDir();
-		}
-
-		// Remember what directory was set. We may have to reinitialize the template later and don't want to lose the previous setting.
-		$this->views_directory = $directory;
-
-		$this->template = new Template($directory);
-
-		// Add url builder to the template.
-		$extension = new \werx\Url\Extensions\Plates(null, null, $this->app['expose_script_name']);
-		$this->template->loadExtension($extension);
+		$this->template = $this->app->getServices('template');
 	}
 
 	/**
@@ -114,12 +103,10 @@ class Controller
 	public function redirect($url, $params = [], $is_query_string = false)
 	{
 		if (!preg_match('/^http/', $url)) {
-			$url_builder = new \werx\Url\Builder(null, null, $this->app['expose_script_name']);
-
 			if ($is_query_string && is_array($params)) {
-				$url = $url_builder->query($url, $params);
+				$url = $this->url($url, [], $params);
 			} else {
-				$url = $url_builder->action($url, $params);
+				$url = $this->url($url, $params);
 			}
 		} else {
 			// External url. Just do a basic expansion.
@@ -199,16 +186,12 @@ class Controller
 				$view = $view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $view ?: $this->app['action']);
 			}
 		}
-		$this->view_data = $data;
-		return $this->template->output($view, $data);
-	}
 
-	/**
-	 * Returns the current views custom data
-	 */
-	public function viewData()
-	{
-		return $this->view_data;
+		$response = new Response($this->template->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
+		if ($this->app['compatibility_mode'] == "1.0") {
+			$this->app->setResponse($response);
+		}
+		return $response;
 	}
 
 	public function content($content, $content_type = "text/html")
@@ -237,8 +220,8 @@ class Controller
 		if (!is_array($params)) {
 			throw new \Exception('Invalid params');
 		}
-		$uri = \Rize\UriTemplate();
-		return $this->context->getUrl($uri->expend($template, $params), $qs);
+		$uri = new \Rize\UriTemplate();
+		return $this->context->getUrl($uri->expand($template, $params), $qs);
 	}
 
 	public function routeUrl($route = null, array $data = [], $apply_current_params = true, array $qs = [])

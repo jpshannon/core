@@ -1,88 +1,41 @@
 <?php
 namespace werx\Core;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
-
-/**
- * Extension to Plates to work better with our routing and auto-sanitize view variables.
- */
-class Template extends \League\Plates\Template
+class Template extends \League\Plates\Template\Template
 {
-	/**
-	 * @method \League\Plates\Engine $engine
-	 */
-	public $engine;
 
-	protected $unguarded = ['unguarded', 'engine'];
-
-	public function __construct($path = null)
-	{
-		// Create a new engine with the proper path to views directory.
-		$this->engine = new \League\Plates\Engine($path);
-
-		parent::__construct($this->engine);
-	}
-
-	public function uri($resource = null)
-	{
-		return $this->url()->action($resource);
-	}
-
-	public function asset($resource = null)
-	{
-		return $this->url()->asset($resource);
-	}
+	protected $transforms = [];
 
 	/**
-	 * Return our compiled view.
-	 * Sanitize the data before rendering.
-	 *
-	 * @param string $view
-	 * @param array $data
-	 * @return string
+	 * Create new Template instance.
+	 * @param ViewEngine $engine
+	 * @param string $name
 	 */
-	public function render($view, array $data = null)
+	public function __construct($engine, $name, $transforms = [])
+	{	
+		$this->transforms = $transforms;
+		parent::__construct($engine, $name);
+	}
+
+
+	public function __get($name)
 	{
-		// Sanitize variables already in the template.
-		foreach (get_object_vars($this) as $key => $value) {
-			if (!in_array($key, $this->unguarded)) {
-				$this->$key = $this->scrub($value);
-			}
+		if (!array_key_exists($name, $this->data)) {
+			throw new \Exception("Property does not exist '$name'" . print_r($this->data,1));
 		}
-
-		// Also sanitize any variables we are passing in to the template
-		$data = $this->scrub($data);
-
-		return parent::render($view, $data);
+		
+		$data = $this->data[$name];
+		return ($this->$name = $this->transform($data, $name));
 	}
 
-	/**
-	 * Output the content instead of just render.
-	 * @param $view
-	 * @param array $data
-	 * @return Response
-	 */
-	public function output($view, array $data = null)
+	public function __set($name, $value)
 	{
-		$response = new Response($this->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
-		$app = WerxApp::getInstance();
-		if ($app['compatibility_mode'] === '1.0') {
-			$app->setResponse($response);
-		}
-		return $response;
+		$this->layoutData[$name] = $value;
 	}
 
-	/**
-	 * Add a directory where views can be found.
-	 *
-	 * @param $name
-	 * @param $path
-	 */
-	public function addFolder($name, $path)
+	public function setLayout($name, array $data = array())
 	{
-		$this->engine->addFolder($name, $path);
+		$this->layout($name, $data);
 	}
 
 	/**
@@ -91,20 +44,18 @@ class Template extends \League\Plates\Template
 	 * @param $var
 	 * @return array
 	 */
-	public function scrub($var)
+	public function scrub($var, $functions)
 	{
 		if (is_string($var)) {
 			// Sanitize strings
-			return $this->escape($var);
+			return $this->batch($var, $functions);
 
 		} elseif (is_array($var)) {
 			// Sanitize arrays
 			while (list($key) = each($var)) {
 				// casting key to string for the case of numeric indexed arrays
 				// i.e. 0, 1, etc. b/c 0 == any string in php
-				if (!in_array((string)$key, $this->unguarded)) {
-					$var[$key] = $this->scrub($var[$key]);
-				}
+				$var[$key] = $this->transform($var[$key], $key);
 			}
 
 			return $var;
@@ -113,7 +64,7 @@ class Template extends \League\Plates\Template
 			$values = get_object_vars($var);
 
 			foreach ($values as $key => $value) {
-				$var->$key = $this->scrub($value);
+				$var->$key = $this->transform($value, $key);
 			}
 			return $var;
 
@@ -123,50 +74,37 @@ class Template extends \League\Plates\Template
 		}
 	}
 
-	/**
-	 * Don't escape template variables with the specified name.
-	 *
-	 * @param $key
-	 */
-	public function unguard($key)
+	protected function transform($value, $key)
 	{
-		if (is_array($key)) {
-			foreach ($key as $k) {
-				$this->unguard($k);
-			}
-		} else {
-			$this->unguarded[] = $key;
+		$transform = !array_key_exists((string)$key, $this->transforms) ? 'escape' : $this->transforms[$key];
+		if ($transform === false) {
+			return $value;
 		}
+		return $this->scrub($value, $transform);
 	}
 
 	/**
-	 * @param array $data
-	 */
-	public function setPrefill($data = [])
-	{
-		$this->data(['prefill' => $data]);
-	}
+     * Apply multiple functions to variable.
+     * @param  mixed  $var
+     * @param  string $functions
+     * @return mixed
+     */
+    protected function batch($var, $functions)
+    {
+        foreach (explode('|', $functions) as $function) {
+            if ($this->engine->doesFunctionExist($function)) {
+                $var = call_user_func(array($this, $function), $var);
+            } elseif (is_callable(array($this,$function))) {
+                $var = call_user_func(array($this,$function), $var);
+            } elseif (is_callable($function)) {
+                $var = call_user_func($function, $var);
+            } else {
+                throw new LogicException(
+                    'The batch function could not find the "' . $function . '" function.'
+                );
+            }
+        }
 
-	/**
-	 * @param $key
-	 * @param null $default
-	 * @return null
-	 */
-	public function prefill($key, $default = null)
-	{
-		if (isset($this->prefill)) {
-			return isset($this->prefill[$key]) ? $this->prefill[$key] : $default;
-		} else {
-			return $default;
-		}
-	}
-
-	/**
-	 * @param $extension
-	 * @return \League\Plates\Engine
-	 */
-	public function loadExtension($extension)
-	{
-		return $this->engine->loadExtension($extension);
-	}
+        return $var;
+    }
 }

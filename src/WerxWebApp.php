@@ -44,6 +44,9 @@ class WerxWebApp extends WerxApp
 		$services->setSingleton('request', function ($sc) {
 			return Request::createFromGlobals();
 		});
+		$services->setSingleton('template', function($sc) {
+			return new ViewEngine($this->context->getViewsDir());
+		});
 		return $services;
 	}
 

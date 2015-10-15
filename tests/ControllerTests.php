@@ -96,20 +96,6 @@ class ControllerTests extends \PHPUnit_Framework_TestCase
 		$this->expectOutputString('Hello, Dave');
 	}
 
-	public function testCanPrefillFromSession()
-	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->prefillFromSession()->send();
-		$this->expectOutputString('from session', "Prefill in session should render the specified value");
-	}
-
-	public function testCanPrefillFromSessionDefaultValue()
-	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->prefillFromSessionDefaultValue()->send();
-		$this->expectOutputString('default', "No prefill in session should render default value");
-	}
-
 	protected function getAppDir()
 	{
 		return __DIR__ . DIRECTORY_SEPARATOR . 'resources';

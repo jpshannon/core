@@ -1,1 +1,0 @@
-<?=$this->prefill('foo', 'default');?>

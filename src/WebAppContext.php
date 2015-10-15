@@ -130,7 +130,7 @@ class WebAppContext extends AppContext
 	public function getUrl($path, array $qs = [])
 	{
 		if (!empty($qs)) {
-			$path .= (strpos($path, "?") >= 0 ? "&" : "?") . http_build_query($qs);
+			$path .= (strpos($path, "?") === false ? "?" : "&amp;") . http_build_query($qs);
 		}
 		return WerxApp::combineVirtualPath($this->getRootUrl(), ltrim($path, '/'));
 	}

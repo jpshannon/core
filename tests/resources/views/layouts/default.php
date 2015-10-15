@@ -5,6 +5,6 @@
 	</head>
 	
 	<body>
-		<?=$this->child()?>
+		<?=$this->section('content')?>
 	</body>
 </html>
