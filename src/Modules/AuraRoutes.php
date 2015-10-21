@@ -13,7 +13,7 @@ class AuraRoutes extends Module
 	public function config(WerxApp $app)
 	{
 		$services = $app->getServices();
-
+		$services->set('aura', $this);
 		$services->setSingleton('router', function ($sc) use($app) {
 			$factory = new \Aura\Router\RouterFactory;
 			$router = $factory->newInstance();
@@ -76,14 +76,11 @@ class AuraRoutes extends Module
 		$routeNs = (isset($route->params['namespace']) ? $route->params['namespace'] : null);
 		$controller = $this->buildFqn($controller, $app['namespace'], $routeNs);
 
-		$app['controller'] = strtolower(substr(strrchr($controller, '\\'), 1));
-
 		// does the route indicate an action?
 		$action = $app['action'];
 		if (isset($route->params['action'])) {
 			$action = $route->params['action'];
 		}
-		$app['action'] = strtolower($action);
 
 		$method_params = array_filter(
 			array_diff_key($route->params, array_flip(['controller','action','namespace'])),
@@ -91,7 +88,6 @@ class AuraRoutes extends Module
 				return $v !== null;
 			}
 		);
-		$app['route_params'] = $method_params;
 
 		return [$controller, $action, $method_params];
 	}
@@ -103,6 +99,9 @@ class AuraRoutes extends Module
 		if (!class_exists($controller)) {
 			return false;
 		}
+		$app['controller'] = strtolower(substr(strrchr($controller, '\\'), 1));
+		$app['action'] = $action;
+		$app['route_params'] = $params;
 
 		$page = new $controller($app->getContext());
 		if (!$app->getResponse()) {
