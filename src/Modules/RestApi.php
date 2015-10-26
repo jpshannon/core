@@ -67,10 +67,12 @@ class RestApi extends \werx\Core\Module
 			$response = \werx\Core\Api::negotiateResponse(['errors' => true, 'message' => $message], 500);
 		}
 
+		if (!$response) {
+			 $response = \werx\Core\Api::negotiateResponse(['errors' => true, 'message' => 'Requested method not found'], 404);
+		}
 		$headers = $app->getServices('config')->get('api:headers', []);
-		foreach ($headers as $key => $value)
-		{
-			$response->headers->add($key, $value);
+		foreach ($headers as $key => $value) {
+			$response->headers->set($key, $value);
 		}
 		return $response;
 	}

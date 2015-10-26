@@ -25,6 +25,11 @@ abstract class Api extends Controller
 		return new Response(null, Response::HTTP_NO_CONTENT);
 	}
 
+	public function notFound()
+	{
+		return new Response("404 Not Found", Response::HTTP_NOT_FOUND);
+	}
+
 	public function badRequest($message, $errors)
 	{
 		return static::negotiateResponse(['errors'=> $errors, 'message' => $message], Response::HTTP_BAD_REQUEST);
