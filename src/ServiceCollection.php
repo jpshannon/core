@@ -15,7 +15,7 @@ final class ServiceCollection implements \ArrayAccess
 	}
 
 	/**
-	 * Register a collection of services all ato once
+	 * Register a collection of services all at once
 	 *
 	 * @param  array $services
 	 * @return ServiceCollection

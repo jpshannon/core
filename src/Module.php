@@ -27,7 +27,10 @@ abstract class Module
 	 * @param  WerxApp $app
 	 * @return mixed        Typically a response object for web apps, or error code for console apps.
 	 */
-	abstract public function handle(WerxApp $app);
+	public function handle(WerxApp $app)
+	{
+		return $this->handleNext($app);
+	}
 
 	/**
 	 * Sets the module to be executed next by this module
