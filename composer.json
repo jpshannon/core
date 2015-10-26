@@ -35,7 +35,7 @@
 		"aura/router": "~2.0",
 		"league/plates": "~3.0",
 		"werx/config": "~1.0",
-		"illuminate/database": "~5.0",
+		"illuminate/database": "~5.0.0",
 		"prelude/prelude-database": "0.0.3",
 		"symfony/http-foundation": "~2.6",
 		"rize/uri-template": "~0.3",
