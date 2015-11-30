@@ -2,96 +2,74 @@
 
 namespace werx\Core\Tests;
 
+use werx\Core\WerxWebApp;
+use werx\Core\Context;
+use Zend\Diactoros\ServerRequestFactory;
+use Zend\Diactoros\Response;
 use werx\Core\Tests\App\Controllers as Controllers;
 
 class ControllerTests extends \PHPUnit_Framework_TestCase
 {
-	public function __construct()
-	{
-		$this->app = new \werx\Core\Dispatcher(['app_dir'=>$this->getAppDir()]);
-		ob_start();
-	}
 
-	public function __destruct()
+	private function getContext($controller = 'home', $action = 'index', $args = [])
 	{
-		echo ob_get_clean();
+		$app = new WerxWebApp(['app_dir' =>  __DIR__ .	DIRECTORY_SEPARATOR . 'resources']);
+		$context = new Context($app, $controller, $action, $args);
+		$context->setRequest(ServerRequestFactory::fromGlobals());
+		$context->setResponse(new Response());
+		return $context;
 	}
 
 	public function testBasicControllerAction()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->index();
+        $controller = new Controllers\Home($this->getContext());
+		$response = $controller->index();
 
-		$this->expectOutputString('HOME\INDEX');
-	}
-
-	public function testCanOutputJson()
-	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->json(['foo' => 'bar'])->send();
-
-		$this->expectOutputString('{"foo":"bar"}');
-	}
-
-	public function testCanOutputJsonp()
-	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->jsonp(['foo' => 'bar'])->send();
-
-		$this->expectOutputString('/**/callback({"foo":"bar"});');
-	}
-
-	public function testCanRenderTemplate()
-	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->renderTemplate();
-
-		$this->expectOutputString('<p>bar</p>');
+		$this->assertEquals((string)$response->getBody(), 'HOME\INDEX');
 	}
 
 	public function testCanOutputTemplate()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->outputTemplate()->send();
+		$controller = new Controllers\Home($this->getContext());
+		$response = $controller->outputTemplate();
 
-		$this->expectOutputString('<p>bar</p>');
+		$this->assertEquals((string)$response->getBody(), '<p>bar</p>');
 	}
 
 	public function testCanRedirectExternal()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('http://www.example.com')->send();
+		$controller = new Controllers\Home($this->getContext());
+		$response = $controller->redirect('http://www.example.com');
 
-		$this->expectOutputRegex('/Redirecting to http:\/\/www.example.com/');
+		$this->assertTrue($response->hasHeader('Location'));
+		$this->assertEquals('http://www.example.com', $response->getHeaderLine('location'));
 	}
 
 	public function testCanRedirectLocal()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people', 1)->send();
+		$controller = new Controllers\Home($this->getContext());
+		$response = $controller->redirect('home/people', 1);
 
-		$this->expectOutputRegex('/home\/people\/1/');
+		$this->assertEquals('/home/people/1', $response->getHeaderLine('location'));
 	}
 
 	public function testCanRedirectLocalArray()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people/{foo},{bar}', ['foo' => 'Foo', 'bar' => 'Bar'])->send();
-
-		$this->expectOutputRegex('/home\/people\/Foo,Bar/');
+		$controller = new Controllers\Home($this->getContext());
+		$response = $controller->redirect('home/people/{foo},{bar}', ['foo' => 'Foo', 'bar' => 'Bar']);
+        $this->assertEquals('/home/people/Foo,Bar', $response->getHeaderLine('location'));
 	}
 
 	public function testCanRedirectLocalQueryString()
 	{
-		$controller = new Controllers\Home($this->app->getContext());
-		$controller->redirect('home/people', ['lastname' => 'Foo', 'firstname' => 'Bar'], true)->send();
-
-		$this->expectOutputRegex('/home\/people\?lastname=Foo&amp;firstname=Bar/');
+		$controller = new Controllers\Home($this->getContext());
+		$response = $controller->redirect('home/people', ['lastname' => 'Foo', 'firstname' => 'Bar'], true);
+        $this->assertEquals('/home/people?lastname=Foo&firstname=Bar', $response->getHeaderLine('location'));
 	}
 
 	public function testCanExtendConsole()
 	{
-		$controller = new Controllers\Console($this->app->getContext());
+		$controller = new Controllers\Console($this->getContext());
 		$controller->sayHello('Dave');
 		$this->expectOutputString('Hello, Dave');
 	}

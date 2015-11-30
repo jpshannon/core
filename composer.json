@@ -17,7 +17,7 @@
 	"autoload": {
 		"psr-4": {
 			"werx\\Core\\": "src/",
-			"werx\\Core\\Modules\\": "src/Modules"
+			"werx\\Core\\Middleware\\": "src/Middleware"
 		}
 	},
 
@@ -26,24 +26,33 @@
 			"werx\\Core\\Tests\\": "tests/",
 			"werx\\Core\\Tests\\App\\Controllers\\": "tests/resources/controllers/",
 			"werx\\Core\\Tests\\App\\Models\\": "tests/resources/models",
-			"werx\\Core\\Examples\\":  "examples"
+			"werx\\Example\\": "example/src/"
 		}
 	},
 
 	"require": {
 		"php": ">= 5.4",
-		"aura/router": "~2.0",
-		"league/plates": "~3.0",
+		"psr/http-message": "^1.0",
 		"werx/config": "~1.0",
-		"illuminate/database": "~5.0.0",
 		"prelude/prelude-database": "0.0.3",
-		"symfony/http-foundation": "~2.6",
-		"rize/uri-template": "~0.3",
-		"willdurand/negotiation":  "~1.3",
-		"psr/http-message": "^1.0"
+		"rize/uri-template": "~0.3"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "~4.4",
-		"squizlabs/php_codesniffer": "~2.2"
+		"squizlabs/php_codesniffer": "~2.2",
+		"zendframework/zend-diactoros": "^1.1.0",
+		"guzzlehttp/psr7":  "^1.2",
+		"illuminate/database": "~5.0.0",
+		"aura/router": "~2.0",
+		"league/plates": "~3.0",
+		"willdurand/negotiation": "~2.0"
+	},
+	"suggest": {
+		"zendframewark/zend-diactoros": "For a full implementation of the Psr7 http-message specification",
+		"guzzlehttp/psr7":  "An alternate (currently less complete) implementation of the Psr7 http-message specification",
+		"aura/router": "(~2.0) To use the built in Aura Routes middleware",
+		"illuminate/database": "(~5.0.0) To use the builtin in database middleware",
+		"league/plates": "(~3.0) to use the builtin templating",
+		"willdurand/negotiation":  "To use the builtin Rest API middleware"
 	}
 }

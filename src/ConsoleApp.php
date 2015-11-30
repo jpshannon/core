@@ -9,21 +9,13 @@ class ConsoleApp extends WerxApp
 {
 	protected $args;
 
-	public function __construct(array $settings = [], array $args = [])
+	public function __construct(array $settings = [])
 	{
 		parent::__construct($settings);
-		$this->getContext();
-		$this->args = $args;
-		$this->addModule(new Modules\ConsoleDispatcher);
 	}
-
-	/**
-	 * The args to be used to run the application
-	 * 
-	 * @return []
-	 */
-	public function getArgs()
-	{
-		return $this->args;
-	}
+    
+    public function loadMiddleware(Middleware $middleware)
+    {
+        return $middleware->addInitial(new Middleware\ConsoleRunner($this));
+    }
 }

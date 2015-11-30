@@ -13,7 +13,7 @@ class Database
 	/**
 	 * Initialize the connection to the database.
 	 *
-	 * @param null $config
+	 * @param string|array $config
 	 */
 	public static function init($config = null)
 	{
@@ -94,7 +94,7 @@ class Database
 	/**
 	 * Take a string DSN and parse it into an array of its pieces
 	 *
-	 * @param null $string
+	 * @param string $string
 	 * @return array|null
 	 */
 	public static function parseDsn($string = null)

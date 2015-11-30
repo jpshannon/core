@@ -1,15 +1,21 @@
 <?php
+namespace werx\Core\Middleware;
 
-namespace werx\Core\Modules;
+use werx\Core\ConsoleApp;
+use werx\Core\Context;
 
-use werx\Core\Module;
-use werx\Core\WerxApp;
-
-class ConsoleDispatcher extends Module
+class ConsoleRunner
 {
-	public function handle(WerxApp $app)
+	protected $app;
+
+	public function __construct(ConsoleApp $app)
 	{
-		$args = $app->getArgs();
+		$this->app = $app;
+	}
+
+	public function __invoke($request, $response, $next)
+	{
+		$args = $request;
 
 		$controller = ucfirst($args[1]);
 		$job_name = $args[2];
@@ -29,7 +35,8 @@ class ConsoleDispatcher extends Module
 			die("Controller {$class_name} does not exist.\n");
 		}
 
-		$class = new $class_name($app->getContext());
+		$context = new Context($app, $controller, $job_name, $args);
+		$class = new $class_name($context);
 
 		if (!method_exists($class, $job_name)) {
 			die("Method {$job_name} does not exist for controller {$class_name}.\n");

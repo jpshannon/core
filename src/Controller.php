@@ -1,16 +1,9 @@
 <?php
-
 namespace werx\Core;
 
-use werx\Core\Template;
-use werx\Core\Config;
-use werx\Core\Input;
-
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
-
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+use werx\Core\ResponseFactory;
 
 /**
  * Base web controller
@@ -23,25 +16,14 @@ class Controller
 	public $template;
 
 	/**
-	 * @var \werx\Core\Config $config
-	 * @deprecated 2.0 updated to \werx\Core\WebAppContext
-	 */
-	public $config;
-
-	/**
-	 * @var \werx\Core\WebAppContext $context
+	 * @var \werx\Core\Context $context
 	 */
 	public $context;
 
 	/**
-	 * @var \Symfony\Component\HttpFoundation\Request $request
+	 * @var Request $request
 	 */
-	public $request;
-
-	/**
-	 * @var \werx\Core\WerxApp $app
-	 */
-	public $app;
+	protected $request;
 
 	/**
 	 * @var \werx\Core\Input $input
@@ -49,25 +31,24 @@ class Controller
 	public $input;
 
 	/**
+	 * @var MessageFactory
+	 */
+	protected $response;
+
+
+	/**
 	 * Data for use by the view
 	 * @var array
 	 */
 	protected $view_data = [];
 
-	public function __construct($context)
+	public function __construct(Context $context)
 	{
-		$context->setController($this);
-
-		// Set the instance of our application
-		$this->app = $context->getApp();
 		$this->context = $context;
-		$this->config = new Config($context);
 
-		// Set up the template engine.
-		$this->initializeTemplate();
-
-		// Set up our HTTP Request object.
-		$this->initializeRequest();
+		$this->template = $this->initializeTemplate();
+		$this->request = $this->initializeRequest($context->getRequest());
+		$this->response = $context->message;
 	}
 
 	/**
@@ -75,22 +56,23 @@ class Controller
 	 *
 	 * @param string $directory Filesystem path to the views directory.
 	 */
-	public function initializeTemplate()
+	protected function initializeTemplate()
 	{
-		$this->template = $this->app->getServices('template');
+		$template = new ViewEngine($this->context->app->getViewsDir());
+		$template->loadExtensions($this->context->app->getConfig('plates_extensions',[]));
+		return $template;
 	}
 
 	/**
 	 * Get info about the HTTP Request
 	 *
-	 * @var \Symfony\Component\HttpFoundation\Request $request
+	 * @param Request $request
+	 * @return Request
 	 */
-	public function initializeRequest($request = null)
+	protected function initializeRequest(Request $request)
 	{
-		$this->request = $this->app->getServices('request');
-
-		// Shortcuts to the request object for cleaner syntax.
-		$this->input = new Input($this->request);
+		$this->input = new Input($request);
+		return $this->request;
 	}
 
 	/**
@@ -99,6 +81,7 @@ class Controller
 	 * @param string $url
 	 * @param string|int|array $params
 	 * @param bool $is_query_string
+	 * @return Response
 	 */
 	public function redirect($url, $params = [], $is_query_string = false)
 	{
@@ -117,6 +100,15 @@ class Controller
 		return $this->redirectTo($url);
 	}
 
+	/**
+	 * Redirect to a route
+	 * 
+	 * @param mixed $route Route name to redirect to, or 
+	 * @param array $data Route parameters
+	 * @param mixed $apply_current_params Apply current route parameters
+	 * @param array $qs Query string parameters to be included
+	 * @return Response
+	 */
 	public function redirectToRoute($route = null, array $data = [], $apply_current_params = true, array $qs = [])
 	{
 		return $this->redirectTo($this->routeUrl($route, $data, $apply_current_params, $qs));
@@ -124,51 +116,7 @@ class Controller
 
 	public function redirectTo($url)
 	{
-		/**
-		 * You MUST call session_write_close() before performing a redirect to ensure the session is written,
-		 * otherwise it might not happen quickly enough to save your session changes.
-		 */
-		session_write_close();
-
-		$response = new RedirectResponse($url);
-		if ($this->app['compatibility_mode'] == "1.0") {
-			$this->app->setResponse($response);
-		}
-		return $response;
-	}
-
-	/**
-	 * Send a json response with given content.
-	 *
-	 * @param array $content
-	 * @param int $status HTTP Status Code to send
-	 * @param array $headers Additional headers to send
-	 */
-	public function json($content = [], $status=200, $headers = [])
-	{
-		$response = new JsonResponse(null, $status, $headers);
-		$response->setData($content);
-		if ($this->app['compatibility_mode'] == "1.0") {
-			$this->app->setResponse($response);
-		}
-		return $response;
-	}
-
-	/**
-	 * Send a jsonp response with given content.
-	 *
-	 * @param array $content
-	 * @param string $jsonCallback
-	 */
-	public function jsonp($content = [], $jsonCallback = 'callback')
-	{
-		$response = new JsonResponse();
-		$response->setData($content);
-		$response->setCallback($jsonCallback);
-		if ($this->app['compatibility_mode'] == "1.0") {
-			$this->app->setResponse($response);
-		}
-		return $response;
+		return $this->response->redirect($url);
 	}
 
 	/**
@@ -180,28 +128,33 @@ class Controller
 	{
 		if(is_array($view)) {
 			$data = $view;
-			$view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $this->app['action']);
+			$view = sprintf('%s%s%s', $this->context->controller, "/", $this->context->action);
 		} else {
-			if (strpos($view, DIRECTORY_SEPARATOR)===false) {
-				$view = $view = sprintf('%s%s%s', $this->app['controller'], DIRECTORY_SEPARATOR, $view ?: $this->app['action']);
+			if (strpos($view, "/")===false) {
+				$view = $view = sprintf('%s%s%s', $this->context->controller, "/", $view ?: $this->context->action);
 			}
 		}
-
-		$response = new Response($this->template->render($view, $data), Response::HTTP_OK, ['Content-Type' => 'text/html']);
-		if ($this->app['compatibility_mode'] == "1.0") {
-			$this->app->setResponse($response);
-		}
-		return $response;
+		return $this->content($this->template->render($view, $data));
 	}
 
 	public function content($content, $content_type = "text/html")
 	{
-		$response = new Response($content, Response::HTTP_OK);
-		$response->headers->set("Content-Type", $content_type);
-		if ($this->app['compatibility_mode'] == "1.0") {
-			$this->app->setResponse($response);
-		}
-		return $response;
+		return $this->response->content($content, 200, ['Content-Type' => $content_type]);
+	}
+
+	public function notFound($message = "Page not found")
+	{
+		return $this->view('common/404',['message' => $message])->withStatus(404);
+	}
+
+	public function forbidden()
+	{
+		return $this->view('common/403')->withStatus(403);
+	}
+
+	public function unauthorized($www_authenticate = "Basic")
+	{
+		return $this->view('common/404')->withStatus(401)->withHeader('WWW-Authenticate', $www_authenticate);
 	}
 
 	public function asset($resource)
@@ -209,7 +162,7 @@ class Controller
 		return $this->context->getAsset($resource);
 	}
 
-	public function url($template, $params = [], array $qs = [])
+	public function url($template, $params = [], array $qs = [], $preserve = false)
 	{
 		if (is_string($params) || is_int($params)) {
 			$params = ['id' => $params];
@@ -221,18 +174,26 @@ class Controller
 			throw new \Exception('Invalid params');
 		}
 		$uri = new \Rize\UriTemplate();
-		return $this->context->getUrl($uri->expand($template, $params), $qs);
+		return $this->context->getUrl($uri->expand($template, $params), $qs, $preserve);
 	}
 
-	public function routeUrl($route = null, array $data = [], $apply_current_params = true, array $qs = [])
+	/**
+	 * Generates a route from the 
+	 * @param string|array $route The name of the route to generate; or route parameters 
+	 * @param array $data 
+	 * @param mixed $apply_current_params 
+	 * @param array $qs 
+	 * @param mixed $preserve 
+	 * @return \Psr\Http\Message\UriInterface
+	 */
+	public function routeUrl($route = null, array $data = [], $apply_current_params = true, array $qs = [], $preserve = false)
 	{
 		if (is_array($route)) {
 			$data = $route;
-			$route = $this->app['route_name'];
+			$route = $this->app->get('route_name');
 		}
 
-		$url = $this->getRouteUrl($route, $data, $apply_current_params);
-		return empty($qs) ? $url : $url . '?' . http_build_query($qs);
+		return $this->getRouteUrl($route, $data, $apply_current_params, $qs, $preserve);
 	}
 
 	public function routeUri($route = null, array $data = [], $apply_current_params = true, array $qs = [])
@@ -240,18 +201,18 @@ class Controller
 		return $this->context->getUri($this->routeUrl($route, $data, $apply_current_params, $qs));
 	}
 
-	protected function getRouteUrl($route_name, array $route_data = [], $apply_current_params = true)
+	protected function getRouteUrl($route_name, array $route_data = [], $apply_current_params = true, array $qs = [], $preserve = false)
 	{
-		$router = $this->app->router;
+		$router = $this->context->app->get('router');
 		if ($apply_current_params) {
 			$route_data = array_merge(
-				$this->app['route_params'],
-				['controller' => $this->app['controller'], 'action' => $this->app['action']],
+				$this->context->args,
+				['controller' => $this->context->controller, 'action' => $this->context->action],
 				$route_data
 			);
 		}
-		$route = $router->generate($route_name ?: $this->app['route_name'], $route_data);
-		return $this->context->getUrl($route);
+		$route = $router->generate($route_name ?: $this->app->get('route_name'), $route_data);
+		return $this->context->getUrl($route, $qs, $preserve);
 	}
 
 	public function __call($method = null, $args = null)

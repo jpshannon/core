@@ -2,12 +2,14 @@
 
 namespace werx\Core;
 
+use \werx\Config\Container as Config;
+
 /**
  * A Werx Application
  *
  * @property-read /werx/Config/Container $config
  */
-abstract class WerxApp implements \ArrayAccess
+abstract class WerxApp
 {
 	/**
 	 * Active apps
@@ -17,15 +19,6 @@ abstract class WerxApp implements \ArrayAccess
 	protected static $app = [];
 
 	/**
-	 * Modules to be run with the app
-	 *
-	 * Modules are executed first in last out. Typically you will register your main module first.
-	 *
-	 * @var Module[]
-	 */
-	protected $modules = [];
-
-	/**
 	 * The name of the app
 	 *
 	 * @var string
@@ -33,76 +26,22 @@ abstract class WerxApp implements \ArrayAccess
 	protected $name = null;
 
 	/**
-	 * Collection of services configured for the app.
-	 *
-	 * Services should be registred from the initServices method or from Modules.
-	 *
-	 * @var ServiceCollection
+	 * @var Middleware
 	 */
-	protected $services;
+	protected $middleware;
 
-	/**
-	 * Default settings for the app.
-	 *
-	 * Settings are a combination of WerxApp::$defaultSettings, $settings passed in from the constructor
-	 * and settings found in config.php
-	 *
-	 * @var []
-	 */
-	protected $settings;
-
-	/**
-	 * Context for the app being executed
-	 *
-	 * @var AppContext|WebAppContext
-	 */
-	protected $context;
-
-	public function __get($name)
-	{
-		if($this->services->has($name)) {
-			return $this->services->get($name);
-		}
-		throw new \OutOfBoundsException ("$name is not available.");
-	}
+	protected $authorization;
 
 	public function __construct(array $settings = [])
 	{
-		$this->services = new ServiceCollection;
-		$this->settings = array_merge(static::defaultSettings(), $settings);
-		$this->setEnvironment($this->settings['environment']);
-		$this->createConfig();
-		foreach ($this->config->load('config') as $key => $value) {
-			// allow settings passed in to the object prevail
-			if (!array_key_exists($key, $settings)) {
-				$this->settings[$key] = $value;
-			}
-		}
-		$this->setName($this->settings['name']);
+		$settings = array_merge(static::defaultSettings(), $settings);
+		$this->config = $this->createConfig($settings);
+        $this->config->load('config');
+		$this->config->items['default'] = array_merge($this->config->items['default'], $settings);
+		$this->setAuthorization([$this, 'defaultAuthorization']);
+        $this->setName($this->get('name'));
 		static::addInstance($this);
-		$this->initServices($this->services);
-	}
-
-	/**
-	 * Adds a module to be run with the app.
-	 *
-	 * Modules are loaded FIFO.
-	 *
-	 * @param Module $module
-	 * @return WerxApp
-	 */
-	public function addModule(Module $module)
-	{
-		if (in_array($module, $this->modules)) {
-			$mc = get_class($module);
-			throw new \RuntimeException("Attempting to add multiple instances of Module $mc.");
-		}
-		if (count($this->modules) > 0) {
-			$module->setNext($this->modules[0]);
-		}
-		$module->config($this);
-		array_unshift($this->modules, $module);
-		return $this;
+		$this->middleware = $this->loadMiddleware(new Middleware());
 	}
 
 	/**
@@ -110,24 +49,21 @@ abstract class WerxApp implements \ArrayAccess
 	 */
 	public function run()
 	{
-		$start = $this->modules[0];
-		return $start->handle($this);
+        $message = $this->getMessageFactory();
+        $middlware = $this->middleware;
+		return $middlware($message->request(), $message->response());
 	}
 
-	/**
-	 * Get the service collection registered with the application
-	 *
-	 * @param  string $service Get the specific services instead of the collection
-	 * @param  bool   $default The $default value to return if no service can be found
-	 * @return ServiceCollection|mixed If no service is specified, the full collection of services.
-	 */
-	public function getServices($service = null, $default = false)
-	{
-		if (!empty($service)) {
-			return $this->services->get($service, $default);
-		}
-		return $this->services;
-	}
+    /**
+     * Load the middlware to be executed
+     * 
+     * @param Middleware $middlware 
+     * @return Middleware
+     */
+    protected function loadMiddleware(Middleware $middlware)
+    {
+        return $middlware;
+    }
 
 	/**
 	 * Get the application config container
@@ -138,11 +74,20 @@ abstract class WerxApp implements \ArrayAccess
 	 */
 	public function getConfig($key = null, $default = false)
 	{
-		$config = $this->services->get('config');
 		if (!empty($key)) {
-			return $config->get($key, $default);
+			return $this->config->get($key, $default);
 		}
-		return $config;
+		return $this->config;
+	}
+
+	public function set($key, $value)
+	{
+		$this->config->items['default'][$key] = $value;
+	}
+
+	public function get($key)
+	{
+		return $this->config->items['default'][$key];
 	}
 
 	/**
@@ -168,17 +113,49 @@ abstract class WerxApp implements \ArrayAccess
 		return $this->name;
 	}
 
-	/**
-	 * Gets the context of the application
-	 *
-	 * @return AppContext|WebAppContext
-	 */
-	public function getContext()
+    /**
+     * Get the current application environment
+     * 
+     * @return string 
+     */
+    public function getEnvironment()
+    {
+        return $this->get('environment');
+    }
+
+    /**
+     * Flag indicationg if debuging is enabled.
+     * 
+     * @return bool
+     */
+    public function isDebug()
+    {
+        return $this->get('debug') === true;
+    }
+
+    /**
+     * Flag indicating if the application is in CLI mode.
+     * 
+     * @return bool
+     */
+    public function isCli()
+    {
+        return php_sapi_name() === 'cli';
+    }
+
+	public function authorize(Context $context)
 	{
-		if ($this->context) {
-			return $this->context;
-		}
-		return $this->context = new AppContext($this);
+		return call_user_func($this->authorization, $context);
+	}
+
+	public function setAuthorization(callable $authorization)
+	{
+		$this->authorization = $authorization;
+	}
+
+	public function defaultAuthorization(Context $context)
+	{
+		return true;
 	}
 
 	/**
@@ -186,37 +163,45 @@ abstract class WerxApp implements \ArrayAccess
 	 *
 	 * @return \werx\Config\Container
 	 */
-	protected function createConfig()
+	protected function createConfig($settings)
 	{
-		$this->services->setSingleton('config', function ($sc) {
-			$settings = $this->settings;
-			$provider = new \werx\Config\Providers\ArrayProvider(self::combinePath($settings['app_dir'], $settings['config_dir']));
-			return new \werx\Config\Container($provider, $settings['environment']);
-		});
-		return $this->services->get('config');
+		$provider = new \werx\Config\Providers\ArrayProvider(self::combinePath($settings['app_dir'], $settings['config_dir']));
+		return new \werx\Config\Container($provider, $this->resolveEnvironment($settings));
 	}
 
 	/**
-	 * Sets the application environment
+	 * Get the application environment from settings
 	 *
 	 * @param string $environment
 	 */
-	protected function setEnvironment($environment = 'local')
+	protected function resolveEnvironment(array $settings)
 	{
-		$settings = $this->settings;
-		$env = self::combinePath($settings['app_dir'], $settings['config_dir'], $settings['environment_file']);
-		$this->settings['environment'] = (file_exists($env) ? trim(file_get_contents($env)) : $environment);
+		$env = self::combinePaths($settings['app_dir'], $settings['config_dir'], $settings['environment_file']);
+		if (file_exists($env)) {
+			$settings['environment'] = trim(file_get_contents($env));
+		}
+		return $settings['environment'];
 	}
 
-	/**
-	 * Initialize services for the application
-	 *
-	 * @param  ServiceCollection $services
-	 * @return ServiceCollection
-	 */
-	protected function initServices(ServiceCollection $services)
+    /**
+     * Resolves the virtual path to a resource
+     *
+     * @param  string $path
+     * @return string
+     */
+	public function resolvePath($path)
 	{
-		return $services;
+        if (strpos($path, "/")===0) {
+            return $path;
+        }
+        if (starts_with($path, "~/")) {
+            $base_path = $this->get('base_path');
+            if (!empty(pathinfo($base_path, PATHINFO_EXTENSION))) {
+                $base_path = dirname($base_path);
+            }
+            return static::combinePath($base_path, ltrim($path, "~/"), "/");
+        }
+        return static::combinePath($this->get('base_path'), $path, "/");
 	}
 
 	/**
@@ -226,7 +211,7 @@ abstract class WerxApp implements \ArrayAccess
 	 */
 	public function getSrcDir()
 	{
-		return $this->settings['app_dir'];
+		return $this->get('app_dir');
 	}
 
 	/**
@@ -240,47 +225,27 @@ abstract class WerxApp implements \ArrayAccess
 		return static::combinePath($this->getSrcDir(), $file);
 	}
 
-	/**
-	 * ArrayAccces: Check if offset exists
-	 *
-	 * @param mixed $offset
-	 * @return bool
-	 */
-	public function offsetExists($offset)
-	{
-		return array_key_exists($offset, $this->settings);
-	}
+    public function setMessageFactory(callable $factory)
+    {
+        $this->set('message_factory', $factory);
+    }
 
 	/**
-	 * ArrayAccess: Get the value at the requested offset
-	 *
-	 * @param mixed $offset
-	 * @return mixed
+	 * Get a MessageFactory instance
+	 * @throws \InvalidArgumentException 
+	 * @return MessageFactory
 	 */
-	public function offsetGet($offset)
+	public function getMessageFactory()
 	{
-		return $this->settings[$offset];
-	}
-
-	/**
-	 * ArrayAccess: Check the value of the requested offset
-	 *
-	 * @param mixed $offset
-	 * @param mixed $value
-	 */
-	public function offsetSet($offset, $value)
-	{
-		$this->settings[$offset] = $value;
-	}
-
-	/**
-	 * ArrayAccess: Unset the value of the requested offset
-	 *
-	 * @param mixed $offset
-	 */
-	public function offsetUnset($offset)
-	{
-		urnset($this->settings[$offset]);
+		$factory = $this->get('message_factory');
+		if (!class_exists($factory)) {
+			throw new \InvalidArgumentException("The class '$factory' does not exist.");
+		}
+		$obj = new $factory();
+		if (!is_a($obj, 'werx\\Core\\MessageFactory')) {
+			throw new \InvalidArgumentException("The class '$factory' does not implement 'werx\\Core\\MessageFactory'.");
+		}
+		return $obj;
 	}
 
 	/**
@@ -339,8 +304,8 @@ abstract class WerxApp implements \ArrayAccess
 				"controller" => "home",
 				"action" => "index",
 				"environment" => "local",
-				"expose_script_name" => false,
-				"compatibility_mode" => "2.0"
+				"message_factory" => "werx\\Core\\Utils\\ZendMessageFactory",
+                "base_path" => false
 			];
 	}
 
@@ -348,10 +313,10 @@ abstract class WerxApp implements \ArrayAccess
 	 * Combines 1 or more paths together
 	 *
 	 * @param string $base The base path
-	 * @param string $p,... The path to add
+	 * @param string $p,... The path(s) to add
 	 * @return string The combined path
 	 */
-	public static function combinePath($base, $p)
+	public static function combinePaths($base, $p)
 	{
 		$paths = func_get_args();
 		$count = func_num_args();
@@ -369,34 +334,19 @@ abstract class WerxApp implements \ArrayAccess
 			}
 		}
 		$s = strpos(':',$path);
-		return $s !== false ? strstr($path,$s) : $path;
+		return $s !== false ? substr($path,$s) : $path;
 	}
 
-	/**
-	 * Combines 1 or more paths together using the a connector suitable for the web
-	 *
-	 * @param string $base The base path
-	 * @param string $p,... The path to add
-	 * @return string The combined path
-	 */
-	public static function combineVirtualPath($base, $p)
-	{
-		$paths = func_get_args();
-		$count = func_num_args();
-		$path = $base;
-
-		for($i = 1; $i < $count; $i++) {
-			if(substr($path, -1) !== '/') {
-				$path .= '/';
-			}
-			$next = $paths[$i];
-			if(substr($next, 0, 1) === '/') {
-				$path = $next;
-			} else {
-				$path .= $next;
-			}
+    public static function combinePath($base, $path, $separator = DIRECTORY_SEPARATOR)
+    {
+        if(substr($base, -1) !== $separator) {
+			$base .= $separator;
 		}
-		$s = strpos(':',$path);
-		return $path;
-	}
+		if(substr($path, 0, 1) === $separator) {
+			$base = $path;
+		} else {
+			$base .= $path;
+		}
+        return $base;
+    }
 }

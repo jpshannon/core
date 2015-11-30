@@ -9,27 +9,14 @@ namespace werx\Core;
 abstract class Console
 {
 	/**
-	 * @var \werx\Core\Config $config
-	 * @deprecated 2.0 same functionality is provided by \werx\Core\AppContext
-	 */
-	public $config;
-
-	/**
-	 * @var \werx\Core\AppContext $context
-	 */
-	public $context;
-
-	/**
-	 * @var \werx\Core\WerxApp $app
+	 * @var \werx\Core\Context $app
 	 */
 	public $app;
 
-	public function __construct($context, $cli_only = true)
+	public function __construct(Context $context, $cli_only = true)
 	{
-		$this->app = $context->getApp();
 		$this->context = $context;
-		$this->config = new Config($context); // help transition;
-		if ($cli_only && $this->context->cli === false) {
+		if ($cli_only && $context->app->isCli() !== true) {
 			die("This is only available from CLI.\n");
 		}
 	}

@@ -2,119 +2,49 @@
 
 namespace werx\Core;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-
-
+use Psr\Http\Message\RequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * A base werx web application
  *
- * @property-read Request $request
- * @property-read \werx\Config\Container $config
  */
 class WerxWebApp extends WerxApp
 {
-	public function __construct($settings = [])
+	public function __construct(array $settings = [])
 	{
 		parent::__construct($settings);
-		if (!isset($this['base_url'])) {
-			$this['base_url'] = $this->request->getSchemeAndHttpHost();
-		}
-		$this['base_url'] = rtrim($this['base_url'], '/');
+        $base_path = $this->get('base_path');
+        if (empty($base_path)) {
+            $base_url = $this->getConfig('base_url');
+            if ($base_url) { 
+                $base_path = parse_url($base_url, PHP_URL_PATH);
+            } else {
+                $base_path = $_SERVER['SCRIPT_NAME'];
+            }
+            $this->set('base_path', $base_path);
+        }
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function getContext()
-	{
-		if ($this->context) {
-			return $this->context;
-		}
-		return $this->context = new WebAppContext($this);
-	}
+    protected function loadMiddleware(Middleware $middlware)
+    {
+        return $middlware->addInitial(new Middleware\ResponseSender());
+    }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function initServices(ServiceCollection $services)
-	{
-		parent::initServices($services);
-		$services->setSingleton('request', function ($sc) {
-			return Request::createFromGlobals();
-		});
-		$services->setSingleton('template', function($sc) {
-			return new ViewEngine($this->context->getViewsDir());
-		});
-		return $services;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function run()
 	{
-		$response = parent::run();
-		if ($override_response = $this->getResponse()) {
-			$override_response->send();
-		} elseif ($response instanceof \Symfony\Component\HttpFoundation\Response) {
-			$response->send();
-		} else {
-			$this->pageNotFound()->send();
-		}
+        $message = $this->getMessageFactory();
+        $middleware = $this->middleware;
+        return $middleware($message->serverRequest(), $message->content(''));
 	}
 
 	/**
-	 * Set Response to be sent for the current request
+	 * Get the directory views will be located in.
 	 *
-	 * Use this to override any standard response the application might normally use.
-	 *
-	 * @param Response $response
-	 * @return WerxWebApp
+	 * @return string
 	 */
-	public function setResponse(Response $response)
+	public function getViewsDir()
 	{
-		$this->services->set('response', $response, true);
-		return $this;
-	}
-
-	/**
-	 * Get Response to be sent
-	 *
-	 * If set, the application will use the Response instead of the response from the module pipeline
-	 *
-	 * @return Respnose|bool
-	 */
-	public function getResponse()
-	{
-		return $this->services->get('response', false);
-	}
-
-	/**
-	 * Generate a 404 response
-	 *
-	 * @param string $message
-	 * @return Response
-	 */
-	public function pageNotFound($message = 'Not Found', $content_type = "text/plain")
-	{
-		return new Response($message, 404, ['Content-Type' => $content_type]);
-	}
-
-	/**
-	 * Register routes for the application
-	 *
-	 * @param \Aura\Router\RouteCollection $router
-	 * @return bool Return true to register the default route, false othewise
-	 */
-	public function registerRoutes(\Aura\Router\RouteCollection $router)
-	{
-		$routes_file = $this->getAppResourcePath('config/routes.php');
-		if (file_exists($routes_file)) {
-			// Let the app specify it's own routes.
-			include_once($routes_file);
-		}
-		return true;
+		return $this->getAppResourcePath($this->getConfig('views_dir'));
 	}
 }
